@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Transaction History</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="dashboard-body">
+
+  <!-- Sidebar Navigation -->
+  <aside class="dashboard-sidebar">
+    <div class="dashboard-sidebar-logo">
+      <i class="fas fa-wallet"></i>
+      <span>Wallet</span>
+    </div>
+    <ul class="dashboard-sidebar-links">
+      <li class="dashboard-sidebar-item">
+        <a href="dashboard.html">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="transfer.html">
+          <i class="fas fa-exchange-alt"></i>
+          <span>Transfer</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item active">
+        <a href="transactions.html">
+          <i class="fas fa-receipt"></i>
+          <span>Transactions</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="profile.html">
+          <i class="fas fa-user"></i>
+          <span>Account</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="help_center.html">
+          <i class="fas fa-question-circle"></i>
+          <span>Help Center</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="#" onclick="logout(); return false;">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <!-- Header with User Info and Actions -->
+    <header class="dashboard-header">
+      <div class="dashboard-user">
+        <div class="dashboard-user-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <div class="dashboard-user-info">
+          <h2 class="dashboard-user-name">User-30ee7</h2>
+          <p class="dashboard-user-meta">VIP Level: Regular User</p>
+        </div>
+      </div>
+      <div class="dashboard-header-actions">
+        <button class="dashboard-deposit-btn" onclick="window.location.href='deposit.html';">Deposit</button>
+        <button class="dashboard-withdraw-btn" onclick="window.location.href='withdraw.html';">Withdraw</button>
+      </div>
+    </header>
+
+    <!-- Transaction History Section with Filters -->
+    <section class="transaction-container transaction-history">
+      <h2 class="transaction-title">Transaction History</h2>
+
+      <!-- Filters for Transactions -->
+      <div class="transaction-filters">
+        <div class="filter-field">
+          <label for="filterDate" class="filter-label">Date</label>
+          <input type="date" id="filterDate" class="filter-input" />
+        </div>
+        <div class="filter-field">
+          <label for="typeSelect" class="filter-label">Type</label>
+          <select id="typeSelect" class="filter-select">
+            <option value="">All</option>
+            <option value="deposit">Deposit</option>
+            <option value="withdrawal">Withdrawal</option>
+            <option value="transfer">Transfer</option>
+          </select>
+        </div>
+        <button id="filterBtn" class="transaction-btn filter-btn">Filter</button>
+      </div>
+
+      <!-- Container to Display Transaction List -->
+      <div id="transactionsList" class="transactions-list"></div>
+    </section>
+  </main>
+
+  <!-- External Scripts -->
+  <script src="js/dashboard.js"></script>
+  <script src="js/transactions.js"></script>
+  <script src="js/logout.js"></script>
+
+</body>
+</html>
