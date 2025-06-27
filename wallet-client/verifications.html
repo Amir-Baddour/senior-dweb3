@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Identity Verification</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="verification-page">
+  <!-- Verification Container: Holds the document upload interface and guidelines -->
+  <div class="verification-container verification-content">
+    <h1 class="verification-title">Let’s Get You Verified</h1>
+    
+    <!-- Upload Section: Provides document upload input and submission -->
+    <div class="upload-section verification-upload-section">
+      <h2 class="verification-subtitle">Document Verification</h2>
+      <p class="verification-text">Your ID document will be scanned for personal data extraction.</p>
+      
+      <label for="idUpload" class="upload-box verification-upload-box">
+        <input type="file" id="idUpload" name="id_document" class="verification-input" accept="image/*,.pdf" hidden>
+        <span class="upload-text verification-upload-text">&#x1F4E4; Upload from Current Device &#x27A1;</span>
+      </label>
+      
+      <button id="submitVerification" class="btn verification-btn">Submit</button>
+    </div>
+
+    <!-- Guidelines Section: Displays rules for acceptable document uploads -->
+    <div class="guidelines verification-guidelines">
+      <p class="verification-guideline">&#10004; Please use the original ID; copies or screenshots are not accepted.</p>
+      <p class="verification-guideline">&#10004; Ensure all information is visible; damaged or expired IDs are not accepted.</p>
+    </div>
+  </div>
+  
+  <script src="js/verification.js"></script>
+  <script src="js/logout.js"></script>
+
+</body>
+</html>
