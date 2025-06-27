@@ -1,0 +1,719 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Full Page Layout */
+.login-page, .register-page, .verification-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem 0;
+    background: #f9fafb;
+}
+
+.login-container, .register-container, .verification-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.login-form-box, .register-form-box, .verification-container {
+    background: #ffffff;
+    padding: 2.5rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    width: 100%;
+    max-width: 420px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.login-form-box:hover, .register-form-box:hover, .verification-container:hover {
+    transform: translateY(-3px);
+}
+
+.login-title, .register-title, .verification-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+.login-subtext, .register-subtext, .verification-text {
+    font-size: 0.95rem;
+    color: #6b7280;
+    margin-bottom: 20px;
+}
+
+.login-input-group, .register-input-group {
+    position: relative;
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.login-input, .register-input, .verification-input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #f9fafb;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.login-input:focus, .register-input:focus, .verification-input:focus {
+    border-color: #fcd535;
+    outline: none;
+    box-shadow: 0 0 8px rgba(252, 213, 53, 0.4);
+}
+
+.login-btn, .register-btn, .verification-btn {
+    background: linear-gradient(135deg, #fcd535, #eab308);
+    border: none;
+    padding: 15px;
+    width: 100%;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.login-btn:hover, .register-btn:hover, .verification-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(234, 179, 8, 0.4);
+}
+
+.auth-link {
+    margin-top: 12px;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.auth-link a {
+    color: #1e293b;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s ease-in-out;
+}
+
+.auth-link a:hover {
+    color: #eab308;
+}
+
+
+
+
+/* Verification Page */
+.verification-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.verification-upload-section {
+    margin-top: 20px;
+}
+
+.verification-upload-box {
+    display: block;
+    background: #f1f5f9;
+    padding: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 15px;
+    transition: background 0.3s ease-in-out;
+}
+
+.verification-upload-box:hover {
+    background: #e2e8f0;
+}
+
+.verification-guidelines {
+    margin-top: 15px;
+    text-align: left;
+}
+
+.verification-guideline {
+    font-size: 0.9rem;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+
+
+  
+  /* SIDEBAR */
+  .dashboard-sidebar {
+    position: fixed;   
+    top: 0;
+    left: 0;
+    width: 250px;
+    height: 100vh; 
+    background: #ffffff;
+    padding: 20px;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    border-right: 1px solid #e0e0e0;
+    overflow-y: auto;  
+  }
+  
+  .dashboard-sidebar-logo {
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #1e293b;
+  }
+  
+  .dashboard-sidebar-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .dashboard-sidebar-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+    border-radius: 5px;
+    font-weight: 500;
+  }
+  
+  .dashboard-sidebar-item a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #555;
+    width: 100%;
+    gap: 12px;
+    font-size: 16px;
+  }
+  
+  .dashboard-sidebar-item.active,
+  .dashboard-sidebar-item:hover {
+    background: #fcd535;
+    color: #1e293b;
+  }
+  
+  .dashboard-sidebar-item.active a,
+  .dashboard-sidebar-item:hover a {
+    color: #1e293b;
+  }
+  
+  /* MAIN CONTENT */
+  .dashboard-main {
+    margin-left: 250px; 
+    padding: 20px;
+  }
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dashboard-user {
+    display: flex;
+    align-items: center;
+  }
+  
+  .dashboard-user-avatar {
+    width: 40px;
+    height: 40px;
+    background: #eee; 
+    border-radius: 50%;
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .dashboard-user-avatar i {
+    font-size: 18px;  
+    color: #555;     
+  }
+  
+  .dashboard-user-name {
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .dashboard-user-meta {
+    color: #6b7280;
+  }
+  .dashboard-deposit-btn,
+  .dashboard-withdraw-btn {
+    background: linear-gradient(135deg, #fcd535, #eab308);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  .dashboard-deposit-btn:hover,
+  .dashboard-withdraw-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(234, 179, 8, 0.4);
+  }
+  .dashboard-header-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .dashboard-widgets {
+    margin-top: 20px;
+  }
+  
+  @media screen and (max-width: 768px) {
+    .dashboard-sidebar {
+      width: 80px;
+    }
+  
+    .dashboard-main {
+      margin-left: 80px;
+    }
+  
+    .dashboard-sidebar-logo span,
+    .dashboard-sidebar-item span {
+      display: none;
+    }
+    
+    .dashboard-sidebar-item {
+      justify-content: center;
+    }
+  }
+  
+  .widget-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .half-width {
+    flex: 1;
+  }
+  .full-width {
+    width: 100%;
+  }
+  
+  .dashboard-widget {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dashboard-widget h3 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    color: #1e293b;
+  }
+  .dashboard-widget-text {
+    margin-bottom: 8px;
+  }
+  .dashboard-widget-btn {
+    background: linear-gradient(135deg, #fcd535, #eab308);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  .dashboard-widget-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(234, 179, 8, 0.4);
+  }
+  
+  /* Verification States */
+  .verification-pending {
+    border: 2px solid orange;
+  }
+  .verification-approved {
+    border: 2px solid #4ade80;
+  }
+  .verification-rejected {
+    border: 2px solid #ef4444;
+  }
+  
+  /* Limits Widget "Task-list" style progress bars */
+  .limits-progress-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 10px;
+  }
+  
+  /* Each row for daily, weekly, monthly usage */
+  .limits-progress-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  /* The label (Daily, Weekly, Monthly) */
+  .limits-progress-label {
+    width: 70px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  /* The numeric usage info (e.g. "50 / 200") */
+  .limits-progress-info {
+    width: 80px;
+    text-align: right;
+    font-weight: 500;
+    color: #555;
+  }
+  
+  /* The container for the horizontal bar */
+  .limits-progress-bar-container {
+    flex: 1;
+    background: #e5e7eb;
+    border-radius: 10px;
+    height: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .limits-progress-bar {
+    background: #fcd535;
+    height: 100%;
+    width: 0%;
+    transition: width 0.4s ease;
+    border-radius: 10px;
+  }
+  
+
+
+
+
+/* Profile Container */
+.profile-container {
+    width: 100%;
+    box-sizing: border-box;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+  }
+  
+  .profile-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 20px;
+  }
+  
+  .profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .profile-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .profile-input {
+    padding: 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #f9fafb;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  
+  .profile-input:focus {
+    border-color: #fcd535;
+    outline: none;
+    box-shadow: 0 0 8px rgba(252, 213, 53, 0.4);
+  }
+  
+  .profile-save-btn {
+    background: linear-gradient(135deg, #fcd535, #eab308);
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    margin-top: 10px;
+  }
+  
+  .profile-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(234, 179, 8, 0.4);
+  }
+  
+  @media (max-width: 768px) {
+    .profile-container {
+      margin: 10px 0;
+      padding: 10px;
+    }
+    
+    .profile-form {
+      gap: 10px;
+    }
+  }
+  
+
+
+
+
+/* Container for deposit, withdraw, or transfer sections */
+.transaction-container {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+.transaction-container {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 20px 0;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  }
+
+.transaction-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.transaction-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.transaction-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.transaction-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.transaction-input {
+    padding: 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #f9fafb;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.transaction-input:focus {
+    border-color: #fcd535;
+    outline: none;
+    box-shadow: 0 0 8px rgba(252, 213, 53, 0.4);
+}
+
+.transaction-btn {
+    background: linear-gradient(135deg, #fcd535, #eab308);
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.transaction-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(234, 179, 8, 0.4);
+}
+
+
+.transaction-history {
+    max-width: 100%; 
+    box-sizing: border-box;
+  }
+  
+  .transaction-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+    align-items: flex-end;
+  }
+  
+  .filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .filter-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .filter-input {
+    padding: 8px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: #f9fafb;
+    transition: border-color 0.3s;
+  }
+  
+  .filter-select {
+    padding: 8px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: #f9fafb;
+    cursor: pointer;
+    transition: border-color 0.3s;
+  }
+  
+  .filter-input:focus,
+  .filter-select:focus {
+    border-color: #fcd535;
+    outline: none;
+    box-shadow: 0 0 6px rgba(252, 213, 53, 0.3);
+  }
+  
+  .filter-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    margin-top: auto;
+  }
+  
+  .transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden; 
+  }
+  
+  .transactions-table thead {
+    background-color: #fcd535;
+    color: #1e293b;
+  }
+  
+  .transactions-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  
+  .transactions-table td {
+    padding: 12px;
+    font-size: 0.95rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .transactions-table tbody tr:hover {
+    background-color: #f9fafb;
+  }
+  
+  .transactions-list p {
+    font-size: 0.95rem;
+    color: #555;
+    margin-top: 10px;
+  }
+
+
+
+
+
+  
+  .help-section {
+    margin: 40px auto;
+    max-width: 800px;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  }
+  .help-section h2 {
+    border-bottom: 2px solid #fcd535;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: #1e293b;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+  .help-section h3 {
+    margin-top: 20px;
+    color: #1e293b;
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+  .help-section p {
+    font-size: 1rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 15px;
+  }
+  .faq-item {
+    margin-bottom: 20px;
+  }
+  .limits-tier {
+    margin-bottom: 20px;
+  }
+  .limits-tier h4 {
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .limits-tier ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    padding-left: 0;
+  }
+  .limits-tier li {
+    margin-bottom: 6px;
+  }
