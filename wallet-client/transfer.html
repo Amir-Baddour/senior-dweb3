@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Internal Transfer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="dashboard-body">
+
+  <!-- Sidebar Navigation -->
+  <aside class="dashboard-sidebar">
+    <div class="dashboard-sidebar-logo">
+      <i class="fas fa-wallet"></i>
+      <span>Wallet</span>
+    </div>
+    <ul class="dashboard-sidebar-links">
+      <li class="dashboard-sidebar-item">
+        <a href="dashboard.html">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item active">
+        <a href="transfer.html">
+          <i class="fas fa-exchange-alt"></i>
+          <span>Transfer</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="transactions.html">
+          <i class="fas fa-receipt"></i>
+          <span>Transactions</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="profile.html">
+          <i class="fas fa-user"></i>
+          <span>Account</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="help_center.html">
+          <i class="fas fa-question-circle"></i>
+          <span>Help Center</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="#" onclick="logout(); return false;">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="dashboard-main">
+    <!-- Header: User Info and Quick Actions -->
+    <header class="dashboard-header">
+      <div class="dashboard-user">
+        <div class="dashboard-user-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <div class="dashboard-user-info">
+          <h2 class="dashboard-user-name">User-30ee7</h2>
+          <p class="dashboard-user-meta">VIP Level: Regular User</p>
+        </div>
+      </div>
+      <div class="dashboard-header-actions">
+        <button class="dashboard-deposit-btn" onclick="window.location.href='deposit.html';">Deposit</button>
+        <button class="dashboard-withdraw-btn" onclick="window.location.href='withdraw.html';">Withdraw</button>
+      </div>
+    </header>
+
+    <!-- Internal Transfer Section -->
+    <section class="transaction-container">
+      <h2 class="transaction-title">Internal Transfer</h2>
+      <div class="transaction-form">
+        <!-- Recipient Email Input -->
+        <div class="transaction-field">
+          <label for="recipientQuery" class="transaction-label">Recipient (Email)</label>
+          <input 
+            type="text" 
+            id="recipientQuery" 
+            class="transaction-input" 
+            placeholder="Enter recipient email" 
+            required
+          >
+        </div>
+        <!-- Optional Search Results Display -->
+        <div id="searchResults" style="margin: 10px 0; color: #333;"></div>
+        <!-- Transfer Amount Input -->
+        <div class="transaction-field">
+          <label for="transferAmount" class="transaction-label">Transfer Amount (USDT)</label>
+          <input 
+            type="number" 
+            id="transferAmount" 
+            class="transaction-input" 
+            step="0.01" 
+            min="0" 
+            required
+          >
+        </div>
+        <!-- Transfer Button -->
+        <button id="transferBtn" class="transaction-btn">Transfer Now</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- External Scripts for Transfer Logic and Dashboard Functions -->
+  <script src="js/transfer.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/logout.js"></script>
+
+</body>
+</html>
