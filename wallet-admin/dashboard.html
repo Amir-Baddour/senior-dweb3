@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  
+</head>
+<body>
+  <div class="dashboard-page">
+    <h2 class="dashboard-title">Dashboard</h2>
+    <div class="dashboard-btn-group">
+      <a href="http://localhost/digital-wallet-platform/wallet-admin/verification_requests.html" class="btn">Verification Requests</a>
+      <a href="#" class="reject-btn" onclick="logout(); return false;">Logout</a>
+    </div>
+  </div>
+
+  <script>
+    function logout() {
+      localStorage.removeItem('admin_jwt');
+      window.location.href = "http://localhost/digital-wallet-platform/wallet-admin/login.html";
+    }
+  </script>
+</body>
+</html>
