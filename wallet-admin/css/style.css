@@ -1,0 +1,238 @@
+/* Global Reset and Font */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Dashboard Page */
+.dashboard-page {
+    min-height: 100vh;
+    padding: 2rem;
+    background: #f3f4f6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 20px;
+}
+
+.dashboard-btn-group {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Common Button Styles */
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-decoration: none;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    border-radius: 8px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+}
+
+/* Login Page */
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+    background: #f9fafb;
+}
+
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    flex-direction: column;
+}
+
+.login-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+.login-subtext {
+    font-size: 0.95rem;
+    color: #6b7280;
+    margin-bottom: 20px;
+}
+
+.login-form-box {
+    background: #ffffff;
+    padding: 2.5rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    width: 100%;
+    max-width: 420px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.login-form-box:hover {
+    transform: translateY(-3px);
+}
+
+.login-input-group {
+    position: relative;
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.login-input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #f9fafb;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.login-input:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
+.login-btn {
+    margin-top: 15px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    padding: 15px;
+    width: 100%;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+}
+
+/* Verification Page */
+.verification-page {
+    min-height: 100vh;
+    padding: 2rem 0;
+    background: #f3f4f6;
+}
+
+.verification-container {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.verification-back-btn {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.verification-back-btn:hover {
+    background: #2563eb;
+}
+
+.verification-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 15px;
+}
+
+.table-wrapper {
+    width: 100%;
+}
+
+.verification-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.verification-thead {
+    background: #3b82f6;
+    color: #ffffff;
+    text-align: left;
+}
+
+.verification-th {
+    padding: 15px;
+}
+
+.verification-tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.verification-tbody tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+.verification-tbody td {
+    padding: 15px;
+}
+
+.approve-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+.approve-btn:hover {
+    background: #059669;
+}
+
+.reject-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+    text-decoration: none;
+}
+
+
+
+.reject-btn:hover {
+    background: #dc2626;
+}

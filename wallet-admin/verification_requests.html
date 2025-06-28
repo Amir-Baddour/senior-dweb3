@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Requests | Admin</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="verification-page">
+    <div class="verification-container">
+        <button class="back-btn verification-back-btn" onclick="goBack()">← Back</button>
+        <h2 class="verification-title">Pending Verification Requests</h2>
+        <div class="table-wrapper">
+            <table id="verificationRequests" class="verification-table">
+                <thead class="verification-thead">
+                    <tr>
+                        <th class="verification-th">User Email</th>
+                        <th class="verification-th">ID Document</th>
+                        <th class="verification-th">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="verificationRequestsBody" class="verification-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+    <script src="js/verification_requests.js"></script>
+</body>
+</html>
