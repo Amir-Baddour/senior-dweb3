@@ -2,7 +2,7 @@
 // create_password_resets_table.php
 
 require_once __DIR__ . '/../../connection/db.php';
-
+$conn = getConnection();
 try {
     $sql = "CREATE TABLE IF NOT EXISTS password_resets (
         id INT AUTO_INCREMENT PRIMARY KEY,

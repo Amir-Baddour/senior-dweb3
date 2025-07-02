@@ -2,7 +2,7 @@
 // create_transactions_table.php
 
 require_once __DIR__ . '/../../connection/db.php';
-
+$conn = getConnection();
 try {
     $sql = "
         CREATE TABLE IF NOT EXISTS transactions (

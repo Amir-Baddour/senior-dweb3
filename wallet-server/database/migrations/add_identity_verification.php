@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../../connection/db.php';
 
+$conn = getConnection();
+
 function columnExists($conn, $column, $table) {
     $stmt = $conn->prepare("SHOW COLUMNS FROM $table LIKE ?");
     $stmt->execute([$column]);

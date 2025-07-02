@@ -1,7 +1,7 @@
 <?php
 // add_tier_to_users.php
 require_once __DIR__ . '/../../connection/db.php';
-
+$conn = getConnection();
 try {
     $sql = "ALTER TABLE users 
             ADD COLUMN tier VARCHAR(20) NOT NULL DEFAULT 'regular' AFTER role";

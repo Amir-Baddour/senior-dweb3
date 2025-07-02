@@ -1,66 +1,34 @@
 <?php
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-// Load Composer's autoloader
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-class MailService
-{
-    private $mailer;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\Writer\PngWriter;
 
-    public function __construct()
-    {
-        // Load mail configuration settings
-        $config = require __DIR__ . '/../connection/mail_config.php';
+// --- Retrieve Parameters ---
+// Get recipient ID and amount from the query string (default amount is 10.0)
+$recipientId = isset($_GET['recipient_id']) ? (int) $_GET['recipient_id'] : 0;
+$amount = isset($_GET['amount']) ? floatval($_GET['amount']) : 10.0;
 
-        // Initialize PHPMailer
-        $this->mailer = new PHPMailer(true);
-        $this->mailer->SMTPDebug = 0;
+// --- Build Payment URL ---
+// Construct the URL that will be encoded into the QR code
+$data = "http://localhost/digital-wallet-platform/wallet-server/user/v1/receive_payment.php?recipient_id={$recipientId}&amount={$amount}";
 
-        try {
-            // Configure SMTP settings
-            $this->mailer->isSMTP();
-            $this->mailer->Host       = $config['host'];
-            $this->mailer->SMTPAuth   = true;
-            $this->mailer->Username   = $config['username'];
-            $this->mailer->Password   = $config['password'];
-            $this->mailer->SMTPSecure = 'tls'; // or 'ssl' if using port 465
-            $this->mailer->Port       = $config['port'];
+// --- Create QR Code ---
+// Generate the QR code with high error correction, a defined size and margin
+$qrCode = new QrCode(
+    data: $data,
+    errorCorrectionLevel: ErrorCorrectionLevel::High,
+    size: 300,
+    margin: 10
+);
 
-            // Set sender information
-            $this->mailer->setFrom($config['from_email'], $config['from_name']);
-        } catch (Exception $e) {
-            // Handle initialization error if needed
-        }
-    }
+// Write the QR code as PNG
+$writer = new PngWriter();
+$result = $writer->write($qrCode);
 
-    /**
-     * Sends an HTML email to the specified recipient.
-     *
-     * @param string $to Recipient email address.
-     * @param string $subject Email subject.
-     * @param string $body HTML email body.
-     * @return bool True if the email was sent, false otherwise.
-     */
-    public function sendMail($to, $subject, $body)
-    {
-        try {
-            // Clear previous recipients and add new one
-            $this->mailer->clearAddresses();
-            $this->mailer->addAddress($to);
-
-            // Set email subject and HTML body
-            $this->mailer->Subject = $subject;
-            $this->mailer->isHTML(true);
-            $this->mailer->Body    = $body;
-
-            // Send the email
-            $this->mailer->send();
-            return true;
-        } catch (Exception $e) {
-            // Log or handle the error if needed
-            return false;
-        }
-    }
-}
+// --- Output QR Code ---
+// Set appropriate header and output the PNG image
+header('Content-Type: ' . $result->getMimeType());
+echo $result->getString();
+exit;
