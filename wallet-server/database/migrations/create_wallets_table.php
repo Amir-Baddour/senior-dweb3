@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../../connection/db.php';
-
+$conn = getConnection();
 $sql = "CREATE TABLE IF NOT EXISTS wallets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

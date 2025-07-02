@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . "/../../connection/db.php"; // Include database connection
-
+global $conn;
 try {
     $sql = "CREATE TABLE IF NOT EXISTS user_profiles (
         id INT AUTO_INCREMENT PRIMARY KEY,

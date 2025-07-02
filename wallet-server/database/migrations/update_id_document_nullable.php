@@ -2,7 +2,7 @@
 // update_id_document_nullable.php
 
 require_once __DIR__ . '/../../connection/db.php';
-
+$conn = getConnection();
 try {
     // Make 'id_document' column accept NULL with a default of NULL
     $sql = "ALTER TABLE verifications 

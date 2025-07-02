@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../connection/db.php';
-
+$conn = getConnection();
 try {
     $sql = "ALTER TABLE users 
             DROP COLUMN is_validated, 
