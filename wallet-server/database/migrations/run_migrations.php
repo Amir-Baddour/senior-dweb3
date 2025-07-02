@@ -1,12 +1,12 @@
 <?php
-// Make sure error reporting is enabled
+// Enable error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Adjust the path to your DB connection script
-require_once __DIR__ . '/../wallet-server/connection/connection.php';
+// Require your DB connection
+require_once __DIR__ . '/../../connection/db.php';
 
-// List of migration files to include
+// List of migration files
 $migrations = [
     'create_users_table.php',
     'create_wallets_table.php',
@@ -22,10 +22,10 @@ $migrations = [
     'update_transaction_enum.php',
 ];
 
-// Loop and include each migration
+// Loop through and run each migration
 foreach ($migrations as $migration) {
     echo "Running migration: $migration\n";
-    require_once __DIR__ . '/migrations/' . $migration;
+    require_once __DIR__ . '/' . $migration;
 }
 
 echo "✅ All migrations executed.\n";
