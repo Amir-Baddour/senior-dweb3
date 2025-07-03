@@ -20,8 +20,9 @@ document.addEventListener("DOMContentLoaded", function () {
         formData.append("id_document", fileInput.files[0]);
         formData.append("referrer", document.referrer);
 
+        
         // Make API call to upload document; redirect on success
-        axios.post("http://ec2-13-38-91-228.eu-west-3.compute.amazonaws.com/user/v1/verification.php", formData, {
+        axios.post("http://localhost/digital-wallet-plateform/wallet-server/user/v1/verification.php", formData, {
             headers: { 
                 "Content-Type": "multipart/form-data",
                 "Authorization": `Bearer ${token}`

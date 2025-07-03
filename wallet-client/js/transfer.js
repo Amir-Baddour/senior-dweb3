@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function() {
             amount: transferAmount
         };
 
-        axios.post('http://ec2-13-38-91-228.eu-west-3.compute.amazonaws.com/user/v1/transfer.php', data, {
+        axios.post('http://localhost/digital-wallet-plateform/wallet-server/user/v1/transfer.php', data, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
         .then(response => {

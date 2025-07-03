@@ -1,5 +1,13 @@
 <?php
-header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header('Content-Type: application/json');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 // Include required files and models
 require_once __DIR__ . '/../../../connection/db.php';
@@ -8,11 +16,10 @@ require_once __DIR__ . '/../../../models/UserProfilesModel.php';
 require_once __DIR__ . '/../../../models/WalletsModel.php';
 require_once __DIR__ . '/../../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../../utils/MailService.php';
-require_once __DIR__ . '/../../../utils/verify_jwt.php'; // Adjust path if needed
+require_once __DIR__ . '/../../../utils/verify_jwt.php';
 
 /**
  * Generate a simple JWT.
- * In production, consider using firebase/php-jwt for robust handling.
  */
 function generate_jwt(array $payload, string $secret, int $expiry_in_seconds = 3600): string
 {
@@ -27,21 +34,20 @@ function generate_jwt(array $payload, string $secret, int $expiry_in_seconds = 3
     ]);
 
     // Base64Url encode header and payload
-    $base64Header  = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
-    $base64Payload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode(json_encode($payload)));
+    $base64Header  = str_replace(['+', '/', '='], ['-', '', ''], base64_encode($header));
+    $base64Payload = str_replace(['+', '/', '='], ['-', '', ''], base64_encode(json_encode($payload)));
 
     // Create signature
     $signature = hash_hmac('sha256', $base64Header . "." . $base64Payload, $secret, true);
-    $base64Signature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+    $base64Signature = str_replace(['+', '/', '='], ['-', '', ''], base64_encode($signature));
 
     return $base64Header . "." . $base64Payload . "." . $base64Signature;
 }
 
-$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Replace with your secure secret key
+$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Replace with secure secret
 $response = ["status" => "error", "message" => "Something went wrong"];
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    // Retrieve and validate input
     $email = trim($_POST["email"]);
     $password = $_POST["password"];
     $confirm_password = $_POST["confirm_password"];
@@ -71,67 +77,50 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $walletsModel = new WalletsModel();
         $verificationsModel = new VerificationsModel();
 
-        // Check if email is already registered
+        // Check for duplicate email
         $allUsers = $usersModel->getAllUsers();
-        $emailExists = false;
         foreach ($allUsers as $u) {
             if ($u['email'] === $email) {
-                $emailExists = true;
-                break;
+                $response["message"] = "Email is already registered";
+                echo json_encode($response);
+                exit;
             }
         }
 
-        if ($emailExists) {
-            $response["message"] = "Email is already registered";
-        } else {
-            // Create a new user (role=0 for normal users)
-            $user_id = $usersModel->create($email, $hashed_password, 0);
+        // Create user
+        $user_id = $usersModel->create($email, $hashed_password, 0);
+        $fullName = explode('@', $email)[0];
 
-            // Use portion of email before '@' as default full name
-            $fullName = explode('@', $email)[0];
+        $userProfilesModel->create($user_id, $fullName, null, '', '', '', '');
+        $walletsModel->create($user_id, 0.00);
+        $verificationsModel->create($user_id, null, 0, 'User not verified yet');
 
-            // Insert default user profile
-            $userProfilesModel->create(
-                $user_id,
-                $fullName,
-                null,   // date_of_birth
-                '',     // phone_number
-                '',     // street_address
-                '',     // city
-                ''      // country
-            );
+        // Generate JWT
+        $payload = ["id" => $user_id, "email" => $email, "role" => 0];
+        $jwt = generate_jwt($payload, $jwt_secret, 3600);
 
-            // Create a wallet record with a starting balance of 0
-            $walletsModel->create($user_id, 0.00);
+        // ✅ Generate QR Code as base64 string
+        $qrBase64 = MailService::generatePaymentQrBase64($user_id, 10.0);
 
-            // Create a verification record with is_validated = 0 and no id_document
-            $verificationsModel->create(
-                $user_id,
-                null,   // id_document
-                0,      // is_validated
-                'User not verified yet'
-            );
+        // ✅ Optionally save QR code image to server (public folder or logs)
+        $qrDir = __DIR__ . '/../../../qrcodes/';
+        if (!file_exists($qrDir)) {
+            mkdir($qrDir, 0777, true);
+        }
+        file_put_contents($qrDir . "user_{$user_id}.png", base64_decode($qrBase64));
 
-            // Generate a JWT token valid for 1 hour
-            $payload = [
+        // Final response
+        $response = [
+            "status" => "success",
+            "message" => "Registration successful",
+            "token" => $jwt,
+            "user" => [
                 "id" => $user_id,
                 "email" => $email,
-                "role" => 0 // normal user
-            ];
-            $jwt = generate_jwt($payload, $jwt_secret, 3600);
-
-            // Return success response with token and user info
-            $response = [
-                "status" => "success",
-                "message" => "Registration successful",
-                "token" => $jwt,
-                "user" => [
-                    "id" => $user_id,
-                    "email" => $email,
-                    "role" => 0
-                ]
-            ];
-        }
+                "role" => 0
+            ],
+            "qr_code" => $qrBase64 // Optional: for frontend display
+        ];
     } catch (PDOException $e) {
         $response["message"] = "Database error: " . $e->getMessage();
     }
