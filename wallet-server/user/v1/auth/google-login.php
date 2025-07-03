@@ -9,8 +9,9 @@ header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 
 
-$client_id = getenv('795971820374-r745mbqe2tkget78iqo6fv29hlpapdpk.apps.googleusercontent.com');
-$client_secret =getenv('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');
+$client_id = getenv('GOOGLE_CLIENT_ID');
+$client_secret = getenv('GOOGLE_CLIENT_SECRET');
+
 $redirect_uri = "http://localhost/digital-wallet-plateform/wallet-client/oauth2-callback.html";
 
 $data = json_decode(file_get_contents("php://input"), true);
