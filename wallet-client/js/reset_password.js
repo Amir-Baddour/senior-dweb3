@@ -25,8 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
     data.append("token", token);
     data.append("new_password", newPassword);
     data.append("confirm_password", confirmPassword);
-
-    axios.post("http://ec2-13-38-91-228.eu-west-3.compute.amazonaws.com/user/v1/reset_password.php", data)
+    axios.post("http://localhost/digital-wallet-plateform/wallet-server/user/v1/reset_password.php", data)
       .then(response => {
         if (!response.data.error) {
           window.location.href = "login.html";

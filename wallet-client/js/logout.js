@@ -7,6 +7,6 @@ function logout() {
     localStorage.removeItem("userRole");
     
     // Redirect to the login page
-    window.location.href = "/digital-wallet-platform/wallet-client/login.html";
+    window.location.href = "/digital-wallet-plateform/wallet-client/login.html";
   }
   

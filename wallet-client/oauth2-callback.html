@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Login Redirect</title>
+</head>
+<body>
+  <p>Logging you in...</p>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+
+    if (code) {
+      // Send code to backend for token exchange
+      fetch('http://localhost/digital-wallet-plateform/wallet-server/user/v1/auth/google-login.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code: code })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          localStorage.setItem('jwt', data.token);
+          window.location.href = '/digital-wallet-plateform/wallet-client/dashboard.html';
+        } else {
+          alert(data.message || 'Google login failed');
+        }
+      });
+    } else {
+      alert('Authorization failed.');
+    }
+  </script>
+</body>
+</html>

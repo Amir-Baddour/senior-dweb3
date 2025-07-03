@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (filterDate.value) params.append('date', filterDate.value);
         if (typeSelect.value) params.append('type', typeSelect.value);
 
-        axios.get('http://ec2-13-38-91-228.eu-west-3.compute.amazonaws.com/user/v1/get_transactions.php?' + params.toString(), axiosConfig)
+        axios.get('http://localhost/digital-wallet-plateform/wallet-server/user/v1/get_transactions.php?' + params.toString(), axiosConfig)
             .then(response => {
                 if (response.data.error) {
                     transactionsList.innerHTML = `<p>Error: ${response.data.error}</p>`;

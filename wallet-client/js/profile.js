@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // Fetch and populate the user profile fields
-    axios.get("http://ec2-13-38-91-228.eu-west-3.compute.amazonaws.com/user/v1/get_profile.php", axiosConfig)
+    axios.get("http://localhost/digital-wallet-plateform/wallet-server/user/v1/get_profile.php", axiosConfig)
         .then(response => {
             if (response.data.success) {
                 document.getElementById("fullName").value = response.data.user.full_name || "";
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         // Update profile via API call; on success, redirect to dashboard
-        axios.post("http://ec2-13-38-91-228.eu-west-3.compute.amazonaws.com/user/v1/update_profile.php", formData, axiosConfig)
+        axios.post("http://localhost/digital-wallet-plateform/wallet-server/user/v1/update_profile.php", formData, axiosConfig)
             .then(response => {
                 if (response.data.success) {
                     window.location.href = "dashboard.html";
