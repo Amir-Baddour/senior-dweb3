@@ -61,6 +61,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // Check if user exists and is an admin (role == 1)
         if ($user && $user['role'] == 1) {
+            // Log what you received
+            error_log("Submitted password: [$password]");
+            error_log("Stored hash: [" . $user['password'] . "]");
             if (password_verify($password, $user['password'])) {
                 // Generate a JWT token for successful admin login
                 $payload = [

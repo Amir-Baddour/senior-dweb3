@@ -11,7 +11,6 @@ class UsersModel
         global $conn;
         $this->conn = $conn;
     }
-
     // CREATE a new user record.
     public function create($email, $password, $role)
     {
