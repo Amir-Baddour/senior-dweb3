@@ -17,7 +17,7 @@ document.getElementById('depositForm').addEventListener('submit', function(e) {
 
     // Make deposit API call with JWT in the header
     axios.post(
-        'http://ec2-13-38-91-228.eu-west-3.compute.amazonaws.com/user/v1/deposit.php',
+        'http://localhost/digital-wallet-plateform/wallet-server/user/v1/deposit.php',
         { amount: depositAmount },
         {
             headers: { 'Authorization': `Bearer ${token}` }
