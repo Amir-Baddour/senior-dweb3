@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.data.success) {
                 let fullName = response.data.user.full_name;
                 let userTier = response.data.user.tier;
+                 console.log("Profile API response:", response.data);
                 if (!fullName || fullName.trim() === "") {
                     userNameElem.innerHTML = 'No name set. <a href="profile.html">Update your profile</a>';
                 } else {
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     axios.get('http://localhost/digital-wallet-plateform/wallet-server/user/v1/get_verification_status.php', axiosConfig)
         .then(response => {
+            console.log("Verification API response:", response.data); 
             if (response.data.error) {
                 verificationTitle.textContent = 'Error';
                 verificationMessage.textContent = response.data.error;
@@ -85,8 +87,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(() => {
-            verificationTitle.textContent = 'Error';
-            verificationMessage.textContent = 'Unable to load verification status.';
+           // verificationTitle.textContent = 'Error';
+            //verificationMessage.textContent = 'Unable to load verification status.';
+            if (verificationTitle) {
+                verificationTitle.textContent = 'Error';
+            }
+            if (verificationMessage) {
+                 verificationMessage.textContent = response.data.error;
+          }
+
         });
 
     // Update wallet balance display
@@ -94,6 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (balanceAmountElem) {
         axios.get('http://localhost/digital-wallet-plateform/wallet-server/user/v1/get_balance.php', axiosConfig)
             .then(response => {
+                console.log("Balance API response:", response.data);
                 if (response.data.error) {
                     balanceAmountElem.textContent = `Error: ${response.data.error}`;
                 } else {
@@ -117,12 +127,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateProgressBar(used, limit, barElem, infoElem) {
         const ratio   = limit > 0 ? (used / limit) : 0;
         const percent = Math.min(ratio * 100, 100);
-        barElem.style.width = percent.toFixed(2) + '%';
-        infoElem.textContent = used.toFixed(2) + ' / ' + limit.toFixed(2);
+        //barElem.style.width = percent.toFixed(2) + '%';
+        //infoElem.textContent = used.toFixed(2) + ' / ' + limit.toFixed(2);
+        if (barElem) {
+            barElem.style.width = percent.toFixed(2) + '%';
+        }
+        if (infoElem) {
+            infoElem.textContent = used.toFixed(2) + ' / ' + limit.toFixed(2);
+        }
+
     }
 
     axios.get('http://localhost/digital-wallet-plateform/wallet-server/user/v1/get_limits_usage.php', axiosConfig)
         .then(response => {
+            console.log("Limits API response:", response.data);
             if (response.data.error) {
                 dailyInfo.textContent   = 'Error';
                 weeklyInfo.textContent  = 'Error';
