@@ -1,38 +1,39 @@
-document.getElementById('depositForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('depositForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
 
-    // Retrieve JWT from localStorage and redirect if missing
-    const token = localStorage.getItem('jwt');
-    if (!token) {
+      const token = localStorage.getItem('jwt');
+      if (!token) {
         window.location.href = 'login.html';
         return;
-    }
+      }
 
-    // Validate deposit amount input
-    const depositAmount = parseFloat(document.getElementById('depositAmount').value);
-    if (isNaN(depositAmount) || depositAmount <= 0) {
-        // Invalid deposit amount; exit submission
+      const depositAmount = parseFloat(document.getElementById('depositAmount').value);
+      if (isNaN(depositAmount) || depositAmount <= 0) {
+        alert("Please enter a valid deposit amount.");
         return;
-    }
+      }
 
-    // Make deposit API call with JWT in the header
-    axios.post(
+      axios.post(
         'http://localhost/digital-wallet-plateform/wallet-server/user/v1/deposit.php',
         { amount: depositAmount },
         {
-            headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` }
         }
-    )
-    .then(function(response) {
+      )
+      .then(function(response) {
         if (response.data.error) {
-            // Handle deposit error (e.g., invalid token or other errors)
+          alert("Deposit error: " + response.data.error);
         } else {
-            // On successful deposit, redirect to dashboard
-            window.location.href = "dashboard.html";
+          window.location.href = "dashboard.html";
         }
-    })
-    .catch(function(error) {
+      })
+      .catch(function(error) {
         console.error("Error during deposit:", error);
-        // Handle network or unexpected errors
+        alert("Unexpected error during deposit.");
+      });
     });
+  }
 });
