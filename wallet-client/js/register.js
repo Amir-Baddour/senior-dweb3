@@ -8,7 +8,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     const formData = new FormData(this);
 
     try {
-        const response = await fetch('http://localhost/digital-wallet-platform/wallet-server/user/v1/auth/register.php', {
+        const response = await fetch('http://localhost/digital-wallet-plateform/wallet-server/user/v1/auth/register.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({

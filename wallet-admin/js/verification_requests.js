@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Fetch pending verification requests and update the table.
     function fetchRequests() {
-        axios.get("http://ec2-13-38-91-228.eu-west-3.compute.amazonaws.com/admin/v1/verification_requests.php", axiosConfig)
+        axios.get("http://localhost/digital-wallet-plateform/wallet-server/admin/v1/verification_requests.php", axiosConfig)
             .then(response => {
                 if (response.data.status === "success") {
                     tableBody.innerHTML = ""; // Clear existing rows
@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         axios.post(
-            "http://ec2-13-38-91-228.eu-west-3.compute.amazonaws.com/admin/v1/update_verification.php", 
+            "http://localhost/digital-wallet-plateform/wallet-server/admin/v1/update_verification.php", 
             {
                 user_id: user_id,
                 is_validated: is_validated
