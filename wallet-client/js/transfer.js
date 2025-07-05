@@ -1,9 +1,17 @@
 document.addEventListener("DOMContentLoaded", function() {
+    alert("transfer.js is working!");
+      console.log("transfer.js loaded and DOM ready.");
     const transferBtn = document.getElementById("transferBtn");
 
-    transferBtn.addEventListener("click", function(e) {
-        e.preventDefault();
+    if (!transferBtn) {
+    console.error("Transfer button not found in DOM!");
+    return;
+}
 
+    transferBtn.addEventListener("click", function(e) {
+         console.log("CLICK HANDLER FIRED.");
+        e.preventDefault();
+        alert("Button clicked!");
         // Verify user authentication by checking the JWT; redirect if missing.
         const token = localStorage.getItem('jwt');
         if (!token) {
