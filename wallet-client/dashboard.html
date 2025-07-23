@@ -48,6 +48,12 @@
         </a>
       </li>
       <li class="dashboard-sidebar-item">
+            <a href="#" onclick="toggleChatBox(); return false;">
+            <i class="fas fa-comments"></i>
+          <span>Live Chat</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
         <a href="#" onclick="logout(); return false;">
           <i class="fas fa-sign-out-alt"></i>
           <span>Logout</span>
@@ -55,6 +61,15 @@
       </li>
     </ul>
   </aside>
+      <!-- Live Chat Box -->
+    <div id="chat-box">
+       <div id="chat-header">
+         AI Support
+      <span id="close-chat" onclick="toggleChatBox()">✖</span>
+     </div>
+    <div id="chat-messages"></div>
+        <input type="text" id="chat-input" placeholder="Ask a question..." onkeydown="handleKey(event)">
+    </div>
 
   <!-- Dashboard Main Content -->
   <main class="dashboard-main">
@@ -127,8 +142,11 @@
     </section>
   </main>
 
+
   <!-- External Scripts: Dashboard functionality and logout -->
   <script src="js/dashboard.js"></script>
+  <script src="js/live_chat.js"></script>
   <script src="js/logout.js"></script>
+
 </body>
 </html>
