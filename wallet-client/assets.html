@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Assets</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body class="dashboard-body">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="dashboard-sidebar-logo">
+      <i class="fas fa-wallet"></i>
+      <span>Wallet</span>
+    </div>
+    <ul class="dashboard-sidebar-links">
+      <li class="dashboard-sidebar-item">
+        <a href="dashboard.html"><i class="fas fa-home"></i><span>Dashboard</span></a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="transfer.html"><i class="fas fa-exchange-alt"></i><span>Transfer</span></a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="transactions.html"><i class="fas fa-receipt"></i><span>Transactions</span></a>
+      </li>
+      <li class="dashboard-sidebar-item active">
+        <a href="assets.html"><i class="fas fa-chart-pie"></i><span>Assets</span></a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="exchange.html"><i class="fas fa-sync-alt"></i><span>Exchange</span></a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="profile.html"><i class="fas fa-user"></i><span>Account</span></a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="help_center.html"><i class="fas fa-question-circle"></i><span>Help Center</span></a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="#" onclick="toggleChatBox(); return false;"><i class="fas fa-comments"></i><span>Live Chat</span></a>
+      </li>
+      <li class="dashboard-sidebar-item">
+        <a href="#" onclick="logout(); return false;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Live Chat Box -->
+  <div id="chat-box">
+    <div id="chat-header">
+      AI Support
+      <span id="close-chat" onclick="toggleChatBox()">✖</span>
+    </div>
+    <div id="chat-messages"></div>
+    <input type="text" id="chat-input" placeholder="Ask a question..." onkeydown="handleKey(event)">
+  </div>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <!-- Header Section -->
+     
+    <header class="dashboard-header">
+      <h2>Assets Overview</h2>
+      <div class="dashboard-header-actions">
+        <button class="dashboard-deposit-btn" onclick="window.location.href='deposit.html';">Deposit</button>
+        <button class="dashboard-withdraw-btn" onclick="window.location.href='withdraw.html';">Withdraw</button>
+      </div>
+    </header>
+    
+    <!-- Estimated Balance Section -->
+    <section class="dashboard-widget full-width">
+      <h3 class="dashboard-widget-title">Estimated Balance</h3>
+      <p class="dashboard-widget-text">
+        <span class="balance-large">0.00000 <span class="currency">USDT</span></span><br>
+        <span id="fiatApprox">≈ $—</span><br>
+         <span id="pnlLine" class="pnl-neutral">PnL (last 1m) —</span>
+      </p>
+    </section>
+
+    <!-- Spot Wallet Table -->
+    <section class="dashboard-widget full-width">
+      <h3 class="dashboard-widget-title">Spot Wallet</h3>
+     
+      <table class="asset-table">
+        <thead>
+          <tr>
+            <th>Coin</th>
+            <th>Amount</th>
+            <th>Available</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Scripts -->
+   <script src="js/assets.js"></script>
+  <script src="js/live_chat.js"></script>
+  <script src="js/logout.js"></script>
+
+</body>
+</html>

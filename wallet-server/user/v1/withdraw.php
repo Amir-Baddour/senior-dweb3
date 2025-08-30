@@ -115,7 +115,9 @@ try {
     }
 
     // Verify wallet balance and update it if sufficient
-    $wallet = $walletsModel->getWalletByUserId($userId);
+    //$wallet = $walletsModel->getWalletByUserId($userId);
+    $wallet = $walletsModel->getWalletByUserAndCoin($userId, 'USDT');
+
     if (!$wallet) {
         echo json_encode(['error' => 'Wallet not found']);
         exit;
@@ -125,7 +127,8 @@ try {
         exit;
     }
     $newBalance = floatval($wallet['balance']) - $amount;
-    $walletsModel->update($wallet['id'], $userId, $newBalance);
+    //$walletsModel->update($wallet['id'], $userId, $newBalance);
+        $walletsModel->updateBalance($userId, 'USDT', $newBalance);
 
     // Record the withdrawal transaction
     $transactionsModel->create($userId, NULL, 'withdrawal', $amount);

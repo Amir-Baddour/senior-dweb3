@@ -90,4 +90,45 @@ class TransactionsModel
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
+
+    /**
+     * Insert an 'exchange' transaction.
+     * If the table has a 'meta_json' column, store details there.
+     * Otherwise insert a minimal row (type='exchange', amount={sold amount}).
+     */
+    public function insertExchange($userId, $amount, array $meta = [])
+    {
+        $hasMeta = false;
+        try {
+            $chk = $this->conn->query("SHOW COLUMNS FROM transactions LIKE 'meta_json'");
+            $hasMeta = ($chk && $chk->rowCount() > 0);
+        } catch (Throwable $e) {
+            $hasMeta = false;
+        }
+
+        if ($hasMeta) {
+            $sql = "INSERT INTO transactions
+                        (sender_id, recipient_id, transaction_type, amount, created_at, meta_json)
+                    VALUES
+                        (:uid, :uid, 'exchange', :amount, NOW(), :meta)";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                ':uid'    => $userId,
+                ':amount' => $amount, // how much was sold from the source coin
+                ':meta'   => json_encode($meta, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),
+            ]);
+        } else {
+            $sql = "INSERT INTO transactions
+                        (sender_id, recipient_id, transaction_type, amount, created_at)
+                    VALUES
+                        (:uid, :uid, 'exchange', :amount, NOW())";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                ':uid'    => $userId,
+                ':amount' => $amount,
+            ]);
+        }
+
+        return $this->conn->lastInsertId();
+    }
 }
