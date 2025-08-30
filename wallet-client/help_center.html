@@ -35,11 +35,24 @@
         </a>
       </li>
       <li class="dashboard-sidebar-item">
+       <a href="assets.html">
+          <i class="fas fa-chart-pie"></i>
+          <span>Assets</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
+      <a href="exchange.html">
+        <i class="fas fa-sync-alt"></i>
+        <span>Exchange</span>
+      </a>
+     </li>
+      <li class="dashboard-sidebar-item">
         <a href="profile.html">
           <i class="fas fa-user"></i>
           <span>Account</span>
         </a>
       </li>
+      
       <li class="dashboard-sidebar-item active">
         <a href="help_center.html">
           <i class="fas fa-question-circle"></i>
@@ -52,6 +65,7 @@
           <span>Live Chat</span>
         </a>
       </li>
+     
       <li class="dashboard-sidebar-item">
         <a href="#" onclick="logout(); return false;">
           <i class="fas fa-sign-out-alt"></i>
@@ -60,7 +74,15 @@
       </li>
     </ul>
   </aside>
-
+       <!-- Live Chat Box -->
+    <div id="chat-box">
+       <div id="chat-header">
+         AI Support
+      <span id="close-chat" onclick="toggleChatBox()">✖</span>
+     </div>
+    <div id="chat-messages"></div>
+        <input type="text" id="chat-input" placeholder="Ask a question..." onkeydown="handleKey(event)">
+    </div>
   <!-- Main Content: Help Center -->
   <main class="dashboard-main">
     <!-- Help Section: Transactions -->
@@ -103,6 +125,7 @@
       </div>
     </section>
   </main>
+  <script src="js/live_chat.js"></script>
   <script src="js/logout.js"></script>
 
 </body>

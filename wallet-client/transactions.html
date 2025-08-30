@@ -36,6 +36,18 @@
           <span>Transactions</span>
         </a>
       </li>
+       <li class="dashboard-sidebar-item">
+       <a href="assets.html">
+          <i class="fas fa-chart-pie"></i>
+          <span>Assets</span>
+        </a>
+      </li>
+      <li class="dashboard-sidebar-item">
+      <a href="exchange.html">
+        <i class="fas fa-sync-alt"></i>
+        <span>Exchange</span>
+      </a>
+     </li>
       <li class="dashboard-sidebar-item">
         <a href="profile.html">
           <i class="fas fa-user"></i>
@@ -62,7 +74,15 @@
       </li>
     </ul>
   </aside>
-
+  <!-- Live Chat Box -->
+    <div id="chat-box">
+       <div id="chat-header">
+         AI Support
+      <span id="close-chat" onclick="toggleChatBox()">✖</span>
+     </div>
+    <div id="chat-messages"></div>
+        <input type="text" id="chat-input" placeholder="Ask a question..." onkeydown="handleKey(event)">
+    </div>
   <!-- Main Content -->
   <main class="dashboard-main">
     <!-- Header with User Info and Actions -->
@@ -99,6 +119,7 @@
             <option value="deposit">Deposit</option>
             <option value="withdrawal">Withdrawal</option>
             <option value="transfer">Transfer</option>
+            <option value="exchange">Exchange</option>
           </select>
         </div>
         <button id="filterBtn" class="transaction-btn filter-btn">Filter</button>
@@ -110,6 +131,7 @@
   </main>
 
   <!-- External Scripts -->
+  <script src="js/live_chat.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/transactions.js"></script>
   <script src="js/logout.js"></script>

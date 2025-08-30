@@ -7,72 +7,80 @@ class WalletsModel
 
     public function __construct()
     {
-        // Use the global PDO instance from db.php for database operations
         global $conn;
         $this->conn = $conn;
     }
 
-    // CREATE: Inserts a new wallet record for a user with an initial balance.
-    public function create($user_id, $balance)
+    // CREATE: Inserts a new wallet record for a coin.
+    public function create($user_id, $coin_symbol, $balance)
     {
-        $sql = "INSERT INTO wallets (user_id, balance, created_at, updated_at)
-                VALUES (:user_id, :balance, NOW(), NOW())";
+        $sql = "INSERT INTO wallets (user_id, coin_symbol, balance, created_at, updated_at)
+                VALUES (:user_id, :coin_symbol, :balance, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE balance = balance + VALUES(balance)";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':user_id', $user_id);
+        $stmt->bindParam(':coin_symbol', $coin_symbol);
         $stmt->bindParam(':balance', $balance);
         $stmt->execute();
         return $this->conn->lastInsertId();
     }
 
-    // READ: Retrieve a wallet record by its wallet ID.
-    public function getWalletById($id)
-    {
-        $sql = "SELECT * FROM wallets WHERE id = :id LIMIT 1";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
+    // READ: Retrieve wallet for a user & coin
+    // READ: Get a specific wallet for a user and coin
+  public function getWalletByUserAndCoin($user_id, $coin_symbol)
+   {
+    $sql = "SELECT * FROM wallets WHERE user_id = :user_id AND coin_symbol = :coin_symbol LIMIT 1";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':user_id', $user_id);
+    $stmt->bindParam(':coin_symbol', $coin_symbol);
+    $stmt->execute();
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+  }
 
-    // READ: Retrieve a wallet record by the associated user ID.
-    public function getWalletByUserId($user_id)
+
+    // READ: Get all wallets for a user
+    public function getWalletsByUser($user_id)
     {
-        $sql = "SELECT * FROM wallets WHERE user_id = :user_id LIMIT 1";
+        $sql = "SELECT * FROM wallets WHERE user_id = :user_id";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':user_id', $user_id);
         $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    // READ: Retrieve all wallet records.
-    public function getAllWallets()
-    {
-        $sql = "SELECT * FROM wallets";
-        $stmt = $this->conn->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // UPDATE: Update an existing wallet record with a new balance.
-    public function update($id, $user_id, $balance)
+    // UPDATE: Update wallet balance for user + coin
+    public function updateBalance($user_id, $coin_symbol, $new_balance)
     {
         $sql = "UPDATE wallets
-                SET user_id = :user_id,
-                    balance = :balance,
-                    updated_at = NOW()
-                WHERE id = :id";
+                SET balance = :balance, updated_at = NOW()
+                WHERE user_id = :user_id AND coin_symbol = :coin_symbol";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':user_id', $user_id);
-        $stmt->bindParam(':balance', $balance);
-        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':coin_symbol', $coin_symbol);
+        $stmt->bindParam(':balance', $new_balance);
         return $stmt->execute();
     }
 
-    // DELETE: Remove a wallet record by its wallet ID.
-    public function delete($id)
+    // UPDATE: Lock or unlock funds
+    public function updateLockedBalance($user_id, $coin_symbol, $locked_balance)
     {
-        $sql = "DELETE FROM wallets WHERE id = :id";
+        $sql = "UPDATE wallets
+                SET locked_balance = :locked_balance, updated_at = NOW()
+                WHERE user_id = :user_id AND coin_symbol = :coin_symbol";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->bindParam(':coin_symbol', $coin_symbol);
+        $stmt->bindParam(':locked_balance', $locked_balance);
+        return $stmt->execute();
+    }
+
+    // DELETE a specific coin wallet
+    public function delete($user_id, $coin_symbol)
+    {
+        $sql = "DELETE FROM wallets WHERE user_id = :user_id AND coin_symbol = :coin_symbol";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->bindParam(':coin_symbol', $coin_symbol);
         return $stmt->execute();
     }
 }
