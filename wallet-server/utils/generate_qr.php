@@ -1,34 +1,34 @@
 <?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\ErrorCorrectionLevel;
-use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
+use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
 
 // --- Retrieve Parameters ---
-// Get recipient ID and amount from the query string (default amount is 10.0)
 $recipientId = isset($_GET['recipient_id']) ? (int) $_GET['recipient_id'] : 0;
-$amount = isset($_GET['amount']) ? floatval($_GET['amount']) : 10.0;
+$amount      = isset($_GET['amount']) ? (float) $_GET['amount'] : 10.0;
 
 // --- Build Payment URL ---
-// Construct the URL that will be encoded into the QR code
-$data = "http://localhost/digital-wallet-platform/wallet-server/user/v1/receive_payment.php?recipient_id={$recipientId}&amount={$amount}";
+// NOTE: your project folder elsewhere is spelled "digital-wallet-plateform".
+// If that is the real folder name, keep it consistent here to avoid 404s.
+$data = "http://localhost/digital-wallet-plateform/wallet-server/user/v1/receive_payment.php"
+      . "?recipient_id={$recipientId}&amount={$amount}";
 
 // --- Create QR Code ---
-// Generate the QR code with high error correction, a defined size and margin
-$qrCode = new QrCode(
-    data: $data,
-    errorCorrectionLevel: ErrorCorrectionLevel::High,
-    size: 300,
-    margin: 10
-);
-
-// Write the QR code as PNG
-$writer = new PngWriter();
-$result = $writer->write($qrCode);
+$result = Builder::create()
+    ->data($data)
+    ->encoding(new Encoding('UTF-8'))
+    ->errorCorrectionLevel(new ErrorCorrectionLevelHigh())
+    ->size(300)
+    ->margin(10)
+    ->roundBlockSizeMode(new RoundBlockSizeModeMargin())
+    ->build();
 
 // --- Output QR Code ---
-// Set appropriate header and output the PNG image
 header('Content-Type: ' . $result->getMimeType());
 echo $result->getString();
 exit;

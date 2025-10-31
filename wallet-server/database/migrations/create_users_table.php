@@ -1,7 +1,8 @@
 <?php
 
 require_once __DIR__ . '/../../connection/db.php';
-$conn = getConnection();
+// Get the $conn variable from db.php, which already establishes the connection
+// No need to call getConnection(), as db.php sets up $conn directly
 $sql = "CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,

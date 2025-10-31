@@ -1,178 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-</head>
-<body class="dashboard-body">
-  <!-- Dashboard Sidebar: Navigation links for the wallet app -->
-  <aside class="dashboard-sidebar">
-    <div class="dashboard-sidebar-logo">
-      <i class="fas fa-wallet"></i>
-      <span>Wallet</span>
-    </div>
-    <ul class="dashboard-sidebar-links">
-      <li class="dashboard-sidebar-item active">
-        <a href="dashboard.html">
-          <i class="fas fa-home"></i>
-          <span>Dashboard</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="transfer.html">
-          <i class="fas fa-exchange-alt"></i>
-          <span>Transfer</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="transactions.html">
-          <i class="fas fa-receipt"></i>
-          <span>Transactions</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-       <a href="assets.html">
-          <i class="fas fa-chart-pie"></i>
-          <span>Assets</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-      <a href="exchange.html">
-        <i class="fas fa-sync-alt"></i>
-        <span>Exchange</span>
-      </a>
-     </li>
-      <li class="dashboard-sidebar-item">
-        <a href="profile.html">
-          <i class="fas fa-user"></i>
-          <span>Account</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="help_center.html">
-          <i class="fas fa-question-circle"></i>
-          <span>Help Center</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-            <a href="#" onclick="toggleChatBox(); return false;">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+  <body class="dashboard-body">
+    <!-- Dashboard Sidebar: Navigation links for the wallet app -->
+    <aside class="dashboard-sidebar">
+      <div class="dashboard-sidebar-logo">
+        <i class="fas fa-wallet"></i>
+        <span>Wallet</span>
+      </div>
+      <ul class="dashboard-sidebar-links">
+        <li class="dashboard-sidebar-item active">
+          <a href="dashboard.html">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="transfer.html">
+            <i class="fas fa-exchange-alt"></i>
+            <span>Transfer</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="transactions.html">
+            <i class="fas fa-receipt"></i>
+            <span>Transactions</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="assets.html">
+            <i class="fas fa-chart-pie"></i>
+            <span>Assets</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="exchange.html">
+            <i class="fas fa-sync-alt"></i>
+            <span>Exchange</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="profile.html">
+            <i class="fas fa-user"></i>
+            <span>Account</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="show-qr.html">
+            <i class="fas fa-qrcode"></i>
+            <span>My QR</span>
+          </a>
+        </li>
+
+        <li class="dashboard-sidebar-item">
+          <a href="help_center.html">
+            <i class="fas fa-question-circle"></i>
+            <span>Help Center</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="#" onclick="toggleChatBox(); return false;">
             <i class="fas fa-comments"></i>
-          <span>Live Chat</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="#" onclick="logout(); return false;">
-          <i class="fas fa-sign-out-alt"></i>
-          <span>Logout</span>
-        </a>
-      </li>
-    </ul>
-  </aside>
-  
+            <span>Live Chat</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="#" onclick="logout(); return false;">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
 
-  <!-- Dashboard Main Content -->
-  <main class="dashboard-main">
-    <!-- Dashboard Header: Displays user info and key actions -->
-    <header class="dashboard-header">
-      <div class="dashboard-user">
-        <div class="dashboard-user-avatar">
-          <i class="fas fa-user"></i>
+    <!-- Dashboard Main Content -->
+    <main class="dashboard-main">
+      <!-- Dashboard Header: Displays user info and key actions -->
+      <header class="dashboard-header">
+        <div class="dashboard-user">
+          <div class="dashboard-user-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="dashboard-user-info">
+            <h2 class="dashboard-user-name">User</h2>
+            <p class="dashboard-user-meta">VIP Level: Regular User</p>
+          </div>
         </div>
-        <div class="dashboard-user-info">
-          <h2 class="dashboard-user-name">User</h2>
-          <p class="dashboard-user-meta">VIP Level: Regular User</p>
+        <div class="dashboard-header-actions">
+          <button
+            class="dashboard-deposit-btn"
+            onclick="window.location.href='deposit.html';"
+          >
+            Deposit
+          </button>
+          <button
+            class="dashboard-withdraw-btn"
+            onclick="window.location.href='withdraw.html';"
+          >
+            Withdraw
+          </button>
         </div>
-      </div>
-      <div class="dashboard-header-actions">
-        <button class="dashboard-deposit-btn" onclick="window.location.href='deposit.html';">Deposit</button>
-        <button class="dashboard-withdraw-btn" onclick="window.location.href='withdraw.html';">Withdraw</button>
-      </div>
-    </header>
+      </header>
 
-    <!-- Dashboard Widgets: Verification, Balance, and Limits -->
-    <section class="dashboard-widgets">
-      <!-- Top Row: Verification and Balance Widgets -->
-      <div class="widget-row">
-        <div class="dashboard-widget half-width" id="verificationWidget">
-          <h3 class="dashboard-widget-title" id="verificationTitle">Loading...</h3>
-          <p class="dashboard-widget-text" id="verificationMessage"></p>
-          <button class="dashboard-widget-btn" id="verificationButton" style="display: none;">Verify Now</button>
+      <!-- Dashboard Widgets: Verification, Balance, and Limits -->
+      <section class="dashboard-widgets">
+        <!-- Top Row: Verification and Balance Widgets -->
+        <div class="widget-row">
+          <div class="dashboard-widget half-width" id="verificationWidget">
+            <h3 class="dashboard-widget-title" id="verificationTitle">
+              Loading...
+            </h3>
+            <p class="dashboard-widget-text" id="verificationMessage"></p>
+            <button
+              class="dashboard-widget-btn"
+              id="verificationButton"
+              style="display: none"
+            >
+              Verify Now
+            </button>
+          </div>
+          <div class="dashboard-widget half-width" id="balanceWidget">
+            <h3 class="dashboard-widget-title">Your Balance</h3>
+            <p class="dashboard-widget-text">
+              <span id="balanceAmount">Loading...</span>
+            </p>
+          </div>
         </div>
-        <div class="dashboard-widget half-width" id="balanceWidget">
-          <h3 class="dashboard-widget-title">Your Balance</h3>
-          <p class="dashboard-widget-text">
-            <span id="balanceAmount">Loading...</span>
-          </p>
-        </div>
-      </div>
 
-      <!-- Second Row: Limits Widget -->
-      <div class="widget-row">
-        <div class="dashboard-widget full-width" id="limitsWidget">
-          <h3 class="dashboard-widget-title">Withdrawal & Transfer Limits</h3>
-          <p class="dashboard-widget-text">
-            Deposits are unlimited, but withdrawals and transfers are subject to limits.
-          </p>
-          <div class="limits-progress-list">
-            <div class="limits-progress-item">
-              <div class="limits-progress-label">Daily</div>
-              <div class="limits-progress-bar-container">
-                <div class="limits-progress-bar" id="dailyBar"></div>
+        <!-- Second Row: Limits Widget -->
+        <div class="widget-row">
+          <div class="dashboard-widget full-width" id="limitsWidget">
+            <h3 class="dashboard-widget-title">Withdrawal & Transfer Limits</h3>
+            <p class="dashboard-widget-text">
+              Deposits are unlimited, but withdrawals and transfers are subject
+              to limits.
+            </p>
+            <div class="limits-progress-list">
+              <div class="limits-progress-item">
+                <div class="limits-progress-label">Daily</div>
+                <div class="limits-progress-bar-container">
+                  <div class="limits-progress-bar" id="dailyBar"></div>
+                </div>
+                <div class="limits-progress-info" id="dailyInfo">0 / 0</div>
               </div>
-              <div class="limits-progress-info" id="dailyInfo">0 / 0</div>
-            </div>
-            <div class="limits-progress-item">
-              <div class="limits-progress-label">Weekly</div>
-              <div class="limits-progress-bar-container">
-                <div class="limits-progress-bar" id="weeklyBar"></div>
+              <div class="limits-progress-item">
+                <div class="limits-progress-label">Weekly</div>
+                <div class="limits-progress-bar-container">
+                  <div class="limits-progress-bar" id="weeklyBar"></div>
+                </div>
+                <div class="limits-progress-info" id="weeklyInfo">0 / 0</div>
               </div>
-              <div class="limits-progress-info" id="weeklyInfo">0 / 0</div>
-            </div>
-            <div class="limits-progress-item">
-              <div class="limits-progress-label">Monthly</div>
-              <div class="limits-progress-bar-container">
-                <div class="limits-progress-bar" id="monthlyBar"></div>
+              <div class="limits-progress-item">
+                <div class="limits-progress-label">Monthly</div>
+                <div class="limits-progress-bar-container">
+                  <div class="limits-progress-bar" id="monthlyBar"></div>
+                </div>
+                <div class="limits-progress-info" id="monthlyInfo">0 / 0</div>
               </div>
-              <div class="limits-progress-info" id="monthlyInfo">0 / 0</div>
             </div>
           </div>
         </div>
+      </section>
+    </main>
+    <!-- Live Chat Box -->
+
+    <div id="chat-box">
+      <div id="chat-header">
+        AI Support
+        <button id="chat-refresh" title="Refresh">↻</button>
+        <span id="close-chat" title="Close" onclick="toggleChatBox()">✖</span>
       </div>
-    </section>
-  </main>
-<!-- Live Chat Box -->
-  
-  <div id="chat-box">
-  <div id="chat-header">
-    AI Support
-    <button id="chat-refresh" title="Refresh">↻</button>
-    <span id="close-chat" title="Close" onclick="toggleChatBox()">✖</span>
-  </div>
 
-  <div id="chat-messages"></div>
+      <div id="chat-messages"></div>
 
-  <div class="chat-input-row">
-    <input
-      type="text"
-      id="chat-input"
-      placeholder="Ask a question..."
-      onkeydown="handleKey(event)"
-      autocomplete="off"
-    />
-    <button id="chat-send" title="Send">➤</button>
-  </div>
-</div>
+      <div class="chat-input-row">
+        <input
+          type="text"
+          id="chat-input"
+          placeholder="Ask a question..."
+          onkeydown="handleKey(event)"
+          autocomplete="off"
+        />
+        <button id="chat-send" title="Send">➤</button>
+      </div>
+    </div>
 
-
-  <!-- External Scripts: Dashboard functionality and logout -->
-  <script src="js/dashboard.js"></script>
-  <script src="js/live_chat.js"></script>
-  <script src="js/logout.js"></script>
-
-</body>
+    <!-- External Scripts: Dashboard functionality and logout -->
+    <script src="js/dashboard.js"></script>
+    <script src="js/live_chat.js"></script>
+    <script src="js/logout.js"></script>
+  </body>
 </html>

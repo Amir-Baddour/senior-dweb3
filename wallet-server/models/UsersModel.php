@@ -67,4 +67,12 @@ class UsersModel
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
+
+      public function getUserByEmail(string $email) {
+        $sql = "SELECT id, email, password, role, is_validated, created_at, updated_at
+                FROM users WHERE email = :email LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':email' => $email]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
 }

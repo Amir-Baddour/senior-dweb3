@@ -36,13 +36,23 @@ class PasswordResetsModel
     }
 
     // Retrieve a reset record by the token
-    public function getResetByToken($token)
+    /*public function getResetByToken($token)
     {
         $sql = "SELECT * FROM password_resets WHERE token = :token LIMIT 1";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':token', $token);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }*/
+    /** @return array|null */
+    public function getResetByToken(string $token): ?array
+    {
+        $sql = "SELECT * FROM password_resets WHERE token = :token LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':token', $token);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;   // <- always returns array or null
     }
 
     // Retrieve a reset record by the user ID
@@ -86,6 +96,13 @@ class PasswordResetsModel
         $sql = "DELETE FROM password_resets WHERE id = :id";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+    public function deleteByUserId($user_id)
+    {
+        $sql = "DELETE FROM password_resets WHERE user_id = :user_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 }

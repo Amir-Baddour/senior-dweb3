@@ -1,0 +1,14 @@
+# Forward the Authorization header to PHP (works on mod_php & FCGI)
+RewriteEngine On
+RewriteCond %{HTTP:Authorization} .
+RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Some FastCGI setups need this too
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+# (Optional) CORS for dev
+<IfModule mod_headers.c>
+  Header always set Access-Control-Allow-Origin "*"
+  Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+  Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+</IfModule>
