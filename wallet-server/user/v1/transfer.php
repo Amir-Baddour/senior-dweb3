@@ -1,195 +1,189 @@
 <?php
-// Set response headers for CORS and JSON content
+// wallet-server/user/v1/transfer.php
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
-// Handle preflight OPTIONS request
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
-// Include dependencies and models
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('display_errors', 0);
+
+function out($a){ echo json_encode($a, JSON_UNESCAPED_SLASHES); exit; }
+function fail($m,$c=400,$extra=[]){ if ($c) http_response_code($c); out(array_merge(['error'=>$m],$extra)); }
+
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../models/WalletsModel.php';
 require_once __DIR__ . '/../../models/TransactionsModel.php';
 require_once __DIR__ . '/../../models/TransactionLimitsModel.php';
-require_once __DIR__ . '/../../utils/MailService.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
-// Authenticate sender using JWT from the Authorization header
-$headers = getallheaders();
-if (!isset($headers['Authorization'])) {
-    echo json_encode(["error" => "No authorization header provided."]);
-    exit;
-}
-list($bearer, $jwt) = explode(' ', $headers['Authorization']);
-if ($bearer !== 'Bearer' || !$jwt) {
-    echo json_encode(["error" => "Invalid token format."]);
-    exit;
-}
-$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Use your secure secret here.
-$decoded = verify_jwt($jwt, $jwt_secret);
-if (!$decoded) {
-    echo json_encode(["error" => "Invalid or expired token."]);
-    exit;
-}
-$sender_id = $decoded['id'];
+// PHPMailer (project root/vendor)
+$autoload = __DIR__ . '/../../../vendor/autoload.php';
+if (file_exists($autoload)) require_once $autoload;
 
-// Read and validate JSON input data
-$data = json_decode(file_get_contents("php://input"), true);
-if (!isset($data['recipient_email']) || !isset($data['amount'])) {
-    echo json_encode(["error" => "Invalid input."]);
-    exit;
-}
-$recipient_email = trim($data['recipient_email']);
-$amount = floatval($data['amount']);
-if ($amount <= 0) {
-    echo json_encode(["error" => "Invalid transfer amount."]);
-    exit;
-}
+// ---- Auth (JWT) ----
+$headers = function_exists('getallheaders') ? getallheaders() : [];
+$auth = $headers['Authorization'] ?? ($headers['authorization'] ?? '');
+[$bearer, $jwt] = array_pad(explode(' ', $auth, 2), 2, null);
+if ($bearer !== 'Bearer' || empty($jwt)) fail('Invalid or missing Authorization header', 401);
 
+$JWT_SECRET = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // must match your login
+$decoded = verify_jwt($jwt, $JWT_SECRET);
+if (!$decoded) fail('Invalid or expired token', 401);
+$sender_id = (int)$decoded['id'];
+
+// ---- Input ----
+$body = json_decode(file_get_contents("php://input"), true) ?: [];
+$recipient_email = isset($body['recipient_email']) ? trim($body['recipient_email']) : '';
+$amount = isset($body['amount']) ? (float)$body['amount'] : 0.0;
+
+if ($recipient_email === '' || $amount <= 0) fail('Invalid input.');
+
+// ---- Business ----
 try {
-    // Initialize required models
-    $usersModel = new UsersModel();
-    $walletsModel = new WalletsModel();
-    $transactionsModel = new TransactionsModel();
-    $transactionLimitsModel = new TransactionLimitsModel();
+  global $conn;
 
-    // Look up recipient by email (looping through all users for simplicity)
-    $recipient = null;
-    $allUsers = $usersModel->getAllUsers();
-    foreach ($allUsers as $u) {
-        if ($u['email'] === $recipient_email) {
-            $recipient = $u;
-            break;
-        }
+  $usersModel        = new UsersModel();
+  $walletsModel      = new WalletsModel();
+  $transactionsModel = new TransactionsModel();
+  $limitsModel       = new TransactionLimitsModel();
+
+  // Resolve recipient
+  $recipient = $usersModel->getUserByEmail($recipient_email);
+  if (!$recipient) fail('Recipient not found');
+  $recipient_id = (int)$recipient['id'];
+  if ($recipient_id === $sender_id) fail('You cannot transfer funds to yourself');
+
+  // Sender wallet & balance
+  $sender_wallet = $walletsModel->getWalletByUserAndCoin($sender_id, 'USDT');
+  if (!$sender_wallet || (float)$sender_wallet['balance'] < $amount) fail('Insufficient funds');
+
+  // Limits by sender tier
+  $sender = $usersModel->getUserById($sender_id);
+  $tier   = $sender ? ($sender['tier'] ?? 'regular') : 'regular';
+  $limits = $limitsModel->getTransactionLimitByTier($tier);
+  if (!$limits) fail('Transaction limits not defined for your tier');
+
+  // Current usage (withdrawal + transfer)
+  $dailyStmt = $conn->prepare("
+    SELECT COALESCE(SUM(amount),0) total FROM transactions
+    WHERE sender_id=:uid AND DATE(created_at)=CURDATE()
+      AND transaction_type IN ('withdrawal','transfer')");
+  $dailyStmt->execute(['uid'=>$sender_id]);
+  $dailyTotal = (float)$dailyStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+  $weeklyStmt = $conn->prepare("
+    SELECT COALESCE(SUM(amount),0) total FROM transactions
+    WHERE sender_id=:uid AND YEARWEEK(created_at,1)=YEARWEEK(CURDATE(),1)
+      AND transaction_type IN ('withdrawal','transfer')");
+  $weeklyStmt->execute(['uid'=>$sender_id]);
+  $weeklyTotal = (float)$weeklyStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+  $monthlyStmt = $conn->prepare("
+    SELECT COALESCE(SUM(amount),0) total FROM transactions
+    WHERE sender_id=:uid AND MONTH(created_at)=MONTH(CURDATE())
+      AND YEAR(created_at)=YEAR(CURDATE())
+      AND transaction_type IN ('withdrawal','transfer')");
+  $monthlyStmt->execute(['uid'=>$sender_id]);
+  $monthlyTotal = (float)$monthlyStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+  if (($dailyTotal + $amount)   > (float)$limits['daily_limit'])   fail('Daily transfer/withdrawal limit exceeded');
+  if (($weeklyTotal + $amount)  > (float)$limits['weekly_limit'])  fail('Weekly transfer/withdrawal limit exceeded');
+  if (($monthlyTotal + $amount) > (float)$limits['monthly_limit']) fail('Monthly transfer/withdrawal limit exceeded');
+
+  // ---- Atomic transfer ----
+  $conn->beginTransaction();
+
+  // 1) Debit sender
+  $newSenderBalance = (float)$sender_wallet['balance'] - $amount;
+  $walletsModel->updateBalance($sender_id, 'USDT', $newSenderBalance);
+
+  // 2) Credit recipient (create wallet if missing)
+  $recipient_wallet = $walletsModel->getWalletByUserAndCoin($recipient_id, 'USDT');
+  if (!$recipient_wallet) {
+    $walletsModel->create($recipient_id, 'USDT', $amount);
+  } else {
+    $walletsModel->updateBalance($recipient_id, 'USDT', (float)$recipient_wallet['balance'] + $amount);
+  }
+
+  // 3) Record transaction
+  $transactionsModel->create($sender_id, $recipient_id, 'transfer', $amount);
+
+  $conn->commit();
+
+  // ---- Email notifications (non-fatal) ----
+  $senderEmail    = $sender['email'] ?? null;
+  $recipientEmail = $recipient_email;
+
+  $fmtAmount = number_format($amount, 2, '.', '');
+  $fmtBal    = number_format($newSenderBalance, 2, '.', '');
+
+  $gmailUser = 'amirbaddour675@gmail.com';
+  $appPass   = 'lqtkykunvmmuhsvj';
+
+  $emailSentSender    = false;
+  $emailSentRecipient = false;
+  $emailError         = null;
+
+  if (class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+    // Function to send with STARTTLS (587) and fallback to SMTPS (465)
+    $sendMail = function ($to, $subject, $html, $alt='') use ($gmailUser, $appPass) {
+      try {
+        $m = new PHPMailer\PHPMailer\PHPMailer(true);
+        $m->isSMTP(); $m->Host='smtp.gmail.com'; $m->SMTPAuth=true;
+        $m->Username=$gmailUser; $m->Password=$appPass;
+        $m->Port=587; $m->SMTPSecure=PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $m->CharSet='UTF-8'; $m->setFrom($gmailUser,'Digital Wallet'); $m->addAddress($to);
+        $m->isHTML(true); $m->Subject=$subject; $m->Body=$html; $m->AltBody=$alt ?: strip_tags($html);
+        $m->send(); return true;
+      } catch (Throwable $e1) {
+        try {
+          $m = new PHPMailer\PHPMailer\PHPMailer(true);
+          $m->isSMTP(); $m->Host='smtp.gmail.com'; $m->SMTPAuth=true;
+          $m->Username=$gmailUser; $m->Password=$appPass;
+          $m->Port=465; $m->SMTPSecure=PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+          $m->CharSet='UTF-8'; $m->setFrom($gmailUser,'Digital Wallet'); $m->addAddress($to);
+          $m->isHTML(true); $m->Subject=$subject; $m->Body=$html; $m->AltBody=$alt ?: strip_tags($html);
+          $m->send(); return true;
+        } catch (Throwable $e2) { error_log('transfer email error: '.$e2->getMessage()); return false; }
+      }
+    };
+
+    if ($senderEmail) {
+      $emailSentSender = $sendMail(
+        $senderEmail,
+        'Transfer Confirmation',
+        "<h2>Transfer Successful</h2>
+         <p>You sent <strong>{$fmtAmount} USDT</strong> to <strong>{$recipientEmail}</strong>.</p>
+         <p>Your new balance is <strong>{$fmtBal} USDT</strong>.</p>",
+        "You sent {$fmtAmount} USDT to {$recipientEmail}. New balance: {$fmtBal} USDT."
+      );
     }
-    if (!$recipient) {
-        echo json_encode(["error" => "Recipient not found."]);
-        exit;
-    }
-    $recipient_id = $recipient['id'];
-    if ($recipient_id == $sender_id) {
-        echo json_encode(["error" => "You cannot transfer funds to yourself."]);
-        exit;
-    }
 
-    // Check sender's wallet balance
-    $sender_wallet = $walletsModel->getWalletByUserId($sender_id);
-    if (!$sender_wallet || floatval($sender_wallet['balance']) < $amount) {
-        echo json_encode(["error" => "Insufficient funds."]);
-        exit;
-    }
+    $emailSentRecipient = $sendMail(
+      $recipientEmail,
+      'Funds Received',
+      "<h2>You've Received Funds</h2>
+       <p>You received <strong>{$fmtAmount} USDT</strong> from <strong>{$senderEmail}</strong>.</p>",
+      "You received {$fmtAmount} USDT from {$senderEmail}."
+    );
+  } else {
+    $emailError = 'PHPMailer not installed';
+  }
 
-    // Retrieve sender's tier and corresponding transaction limits
-    $user = $usersModel->getUserById($sender_id);
-    $tier = $user ? $user['tier'] : 'regular';
-    $limits = $transactionLimitsModel->getTransactionLimitByTier($tier);
-    if (!$limits) {
-        echo json_encode(["error" => "Transaction limits not defined for your tier"]);
-        exit;
-    }
+  out([
+    'message'              => 'Transfer successful',
+    'new_balance'          => (float)$newSenderBalance,
+    'emailSentSender'      => (bool)$emailSentSender,
+    'emailSentRecipient'   => (bool)$emailSentRecipient,
+    'emailError'           => $emailError, // remove in prod if you want
+  ]);
 
-    // Calculate current transfer/withdrawal usage (daily, weekly, monthly)
-    try {
-        $dailyStmt = $conn->prepare("
-            SELECT COALESCE(SUM(amount), 0) AS total 
-            FROM transactions 
-            WHERE sender_id = :user_id 
-              AND DATE(created_at) = CURDATE() 
-              AND transaction_type IN ('withdrawal','transfer')
-        ");
-        $dailyStmt->execute(['user_id' => $sender_id]);
-        $dailyTotal = floatval($dailyStmt->fetch(PDO::FETCH_ASSOC)['total']);
-
-        $weeklyStmt = $conn->prepare("
-            SELECT COALESCE(SUM(amount), 0) AS total 
-            FROM transactions 
-            WHERE sender_id = :user_id 
-              AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) 
-              AND transaction_type IN ('withdrawal','transfer')
-        ");
-        $weeklyStmt->execute(['user_id' => $sender_id]);
-        $weeklyTotal = floatval($weeklyStmt->fetch(PDO::FETCH_ASSOC)['total']);
-
-        $monthlyStmt = $conn->prepare("
-            SELECT COALESCE(SUM(amount), 0) AS total 
-            FROM transactions 
-            WHERE sender_id = :user_id 
-              AND MONTH(created_at) = MONTH(CURDATE()) 
-              AND YEAR(created_at) = YEAR(CURDATE()) 
-              AND transaction_type IN ('withdrawal','transfer')
-        ");
-        $monthlyStmt->execute(['user_id' => $sender_id]);
-        $monthlyTotal = floatval($monthlyStmt->fetch(PDO::FETCH_ASSOC)['total']);
-    } catch (PDOException $e) {
-        echo json_encode(["error" => $e->getMessage()]);
-        exit;
-    }
-
-    // Enforce transaction limits
-    if (($dailyTotal + $amount) > floatval($limits['daily_limit'])) {
-        echo json_encode(["error" => "Daily transfer/withdrawal limit exceeded"]);
-        exit;
-    }
-    if (($weeklyTotal + $amount) > floatval($limits['weekly_limit'])) {
-        echo json_encode(["error" => "Weekly transfer/withdrawal limit exceeded"]);
-        exit;
-    }
-    if (($monthlyTotal + $amount) > floatval($limits['monthly_limit'])) {
-        echo json_encode(["error" => "Monthly transfer/withdrawal limit exceeded"]);
-        exit;
-    }
-
-    // Begin transaction for atomicity
-    $conn->beginTransaction();
-
-    try {
-        // Deduct amount from sender's wallet
-        $newSenderBalance = floatval($sender_wallet['balance']) - $amount;
-        $walletsModel->update($sender_wallet['id'], $sender_id, $newSenderBalance);
-
-        // Credit recipient's wallet; create a wallet if needed
-        $recipient_wallet = $walletsModel->getWalletByUserId($recipient_id);
-        if (!$recipient_wallet) {
-            $walletsModel->create($recipient_id, $amount);
-        } else {
-            $newRecipientBalance = floatval($recipient_wallet['balance']) + $amount;
-            $walletsModel->update($recipient_wallet['id'], $recipient_id, $newRecipientBalance);
-        }
-
-        // Log the transfer transaction
-        $transactionsModel->create($sender_id, $recipient_id, 'transfer', $amount);
-
-        $conn->commit();
-
-        // Send email confirmations to sender and recipient
-        $mailer = new MailService();
-        $subjectSender = "Transfer Confirmation";
-        $bodySender = "
-            <h1>Transfer Successful</h1>
-            <p>You have transferred <strong>{$amount} USDT</strong> to <strong>{$recipient_email}</strong>.</p>
-            <p>Your new balance is: <strong>{$newSenderBalance} USDT</strong></p>
-        ";
-        $mailer->sendMail($user['email'], $subjectSender, $bodySender);
-
-        $subjectRecipient = "Funds Received";
-        $bodyRecipient = "
-            <h1>You've Received Funds</h1>
-            <p>You have received <strong>{$amount} USDT</strong> from <strong>{$user['email']}</strong>.</p>
-        ";
-        $mailer->sendMail($recipient_email, $subjectRecipient, $bodyRecipient);
-
-        echo json_encode(["message" => "Transfer successful.", "new_balance" => $newSenderBalance]);
-    } catch (PDOException $e) {
-        $conn->rollBack();
-        echo json_encode(["error" => "Transfer failed: " . $e->getMessage()]);
-    }
-} catch (PDOException $e) {
-    echo json_encode(["error" => "Database error: " . $e->getMessage()]);
+} catch (Throwable $e) {
+  if (isset($conn) && $conn->inTransaction()) $conn->rollBack();
+  fail('Transfer failed: '.$e->getMessage(), 500);
 }
-?>

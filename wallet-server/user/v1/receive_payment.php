@@ -1,95 +1,106 @@
 <?php
-// receive_payment.php - Process incoming QR payment and update user's wallet.
-header('Content-Type: application/json');
+// wallet-server/user/v1/receive_payment.php
+declare(strict_types=1);
 
-// Include required files and models.
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/WalletsModel.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/TransactionsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/MailService.php';
-require_once __DIR__ . '/../../utils/verify_jwt.php'; // Adjust path as needed
+require_once __DIR__ . '/../../utils/verify_jwt.php';
+
+// ---- helpers ----
+function fail(string $msg, int $code = 400): never {
+    http_response_code($code);
+    echo json_encode(['status' => 'error', 'error' => $msg]);
+    exit;
+}
+// ---- /helpers ----
 
 // --- JWT Authentication ---
-// Retrieve the Authorization header and verify JWT.
-$headers = getallheaders();
-if (!isset($headers['Authorization'])) {
-    echo json_encode(['error' => 'No authorization header provided']);
-    exit;
-}
-list($bearer, $jwt) = explode(' ', $headers['Authorization']);
-if ($bearer !== 'Bearer' || !$jwt) {
-    echo json_encode(['error' => 'Invalid token format']);
-    exit;
-}
-$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Replace with your secure key
+$headers = function_exists('getallheaders') ? getallheaders() : [];
+if (!isset($headers['Authorization'])) fail('No authorization header provided', 401);
+
+[$bearer, $jwt] = array_pad(explode(' ', $headers['Authorization'], 2), 2, '');
+if (strcasecmp($bearer, 'Bearer') !== 0 || $jwt === '') fail('Invalid token format', 401);
+
+$jwt_secret = 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY'; // move to env/config
 $decoded = verify_jwt($jwt, $jwt_secret);
-if (!$decoded) {
-    echo json_encode(['error' => 'Invalid or expired token']);
-    exit;
-}
-$loggedInUserId = $decoded['id'];
+if (!$decoded || !isset($decoded['id'])) fail('Invalid or expired token', 401);
 
-// --- Input Validation ---
-// Check for recipient_id in URL query if required.
-if (!isset($_GET['recipient_id'])) {
-    echo json_encode(['error' => 'No recipient specified']);
-    exit;
-}
-$recipientId = $_GET['recipient_id'];
+$loggedInUserId = (int)$decoded['id'];
 
-// --- Process Payment ---
-// Initialize models.
-$walletsModel = new WalletsModel();
+// --- Inputs from QR URL ---
+if (!isset($_GET['recipient_id'])) fail('No recipient specified');
+$recipientId = (int)$_GET['recipient_id'];
+$amount = isset($_GET['amount']) ? (float)$_GET['amount'] : 10.0;
+if ($amount <= 0) fail('Amount must be positive');
+
+// security: QR recipient must be the authenticated user
+if ($recipientId !== $loggedInUserId) fail('Recipient mismatch', 403);
+
+// --- Models ---
+$walletsModel       = new WalletsModel();
 $verificationsModel = new VerificationsModel();
-$transactionsModel = new TransactionsModel();
-$usersModel = new UsersModel();
+$transactionsModel  = new TransactionsModel();
+$usersModel         = new UsersModel();
 
-// Ensure the user is verified.
+$coin = 'USDT'; // wallet coin you credit
+
+// Ensure account is verified
 $verification = $verificationsModel->getVerificationByUserId($loggedInUserId);
 if (!$verification || (int)$verification['is_validated'] !== 1) {
-    echo json_encode(['error' => 'Your account is not verified. You cannot receive payment.']);
-    exit;
+    fail('Your account is not verified. You cannot receive payment.', 403);
 }
 
-// Define the payment amount (e.g., 10 USDT).
-$amount = 10.0;
-
-// Update or create the wallet record.
-$wallet = $walletsModel->getWalletByUserId($loggedInUserId);
+// --- Credit wallet using your WalletsModel API ---
+$wallet = $walletsModel->getWalletByUserAndCoin($loggedInUserId, $coin);
 if (!$wallet) {
-    // Create wallet with initial balance.
-    $walletsModel->create($loggedInUserId, $amount);
+    // create(user_id, coin_symbol, balance) — adds row or upserts (+balance)
+    $walletsModel->create($loggedInUserId, $coin, $amount);
     $newBalance = $amount;
 } else {
-    // Update existing wallet balance.
-    $newBalance = floatval($wallet['balance']) + $amount;
-    $walletsModel->update($wallet['id'], $loggedInUserId, $newBalance);
+    $current    = isset($wallet['balance']) ? (float)$wallet['balance'] : 0.0;
+    $newBalance = $current + $amount;
+    // updateBalance(user_id, coin_symbol, new_balance)
+    $walletsModel->updateBalance($loggedInUserId, $coin, $newBalance);
 }
 
-// Log the payment transaction (sender_id is NULL for QR payments).
-$transactionsModel->create(null, $loggedInUserId, 'qr_payment', $amount);
+// Log transaction (keep your existing signature)
+if (method_exists($transactionsModel, 'create')) {
+    // Adjust if your create() needs coin_symbol or metadata
+    $transactionsModel->create(null, $loggedInUserId, 'qr_payment', $amount);
+}
 
-// Send an email confirmation if the user's email is available.
+// Email confirmation (best-effort)
 $user = $usersModel->getUserById($loggedInUserId);
-$userEmail = $user ? $user['email'] : null;
-if ($userEmail) {
-    $mailer = new MailService();
-    $subject = "Payment Received";
-    $body = "
-        <h1>Payment Received</h1>
-        <p>You have received <strong>{$amount} USDT</strong> into your wallet via QR code.</p>
-        <p>Your new balance is: <strong>{$newBalance} USDT</strong></p>
-    ";
-    $mailer->sendMail($userEmail, $subject, $body);
+if ($user && !empty($user['email'])) {
+    try {
+        $mailer  = new MailService();
+        $subject = 'Payment Received';
+        $body    = '<h1>Payment Received</h1>'
+                 . '<p>You have received <strong>' . number_format($amount, 2) . " {$coin}</strong> via QR code.</p>"
+                 . '<p>Your new balance is: <strong>' . number_format($newBalance, 2) . " {$coin}</strong></p>";
+        $mailer->sendMail($user['email'], $subject, $body);
+    } catch (Throwable $e) { /* non-fatal */ }
 }
 
-// Return success response.
+// Success
 echo json_encode([
     'status'      => 'success',
-    'message'     => "Payment of {$amount} credits has been added to your wallet.",
+    'message'     => "Payment of {$amount} {$coin} has been added to your wallet.",
     'user_id'     => $loggedInUserId,
+    'coin'        => $coin,
     'new_balance' => $newBalance
 ]);
-?>

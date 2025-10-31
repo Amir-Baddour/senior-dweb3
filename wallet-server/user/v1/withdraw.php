@@ -1,154 +1,228 @@
 <?php
-// withdraw.php - Process a withdrawal request using JWT authentication and transaction limits.
+// wallet-server/user/v1/withdraw.php  (DEV-FRIENDLY)
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
 
-// Include required files and models
-require_once __DIR__ . '/../../connection/db.php';
-require_once __DIR__ . '/../../models/WalletsModel.php';
-require_once __DIR__ . '/../../models/VerificationsModel.php';
-require_once __DIR__ . '/../../models/TransactionsModel.php';
-require_once __DIR__ . '/../../models/UsersModel.php';
-require_once __DIR__ . '/../../models/TransactionLimitsModel.php';
-require_once __DIR__ . '/../../utils/MailService.php';
-require_once __DIR__ . '/../../utils/verify_jwt.php';
+$DEBUG = true; // set to false for production
 
-// Authenticate using JWT from the Authorization header
-$headers = getallheaders();
-if (!isset($headers['Authorization'])) {
-    echo json_encode(['error' => 'No authorization header provided']);
-    exit;
-}
-list($bearer, $jwt) = explode(' ', $headers['Authorization']);
-if ($bearer !== 'Bearer' || !$jwt) {
-    echo json_encode(['error' => 'Invalid token format']);
-    exit;
-}
-$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Replace with a secure key
-$decoded = verify_jwt($jwt, $jwt_secret);
-if (!$decoded) {
-    echo json_encode(['error' => 'Invalid or expired token']);
-    exit;
-}
-$userId = $decoded['id'];
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('display_errors', 0);
+
+function out($arr){ echo json_encode($arr, JSON_UNESCAPED_SLASHES); exit; }
+function derr($msg,$code=400,$extra=[]){ if ($code) http_response_code($code); out(array_merge(['error'=>$msg],$extra)); }
+
+// ---------- Includes ----------
+$phase = 'includes';
 try {
-    // Initialize models
-    $walletsModel = new WalletsModel();
-    $verificationsModel = new VerificationsModel();
-    $transactionsModel = new TransactionsModel();
-    $usersModel = new UsersModel();
-    $transactionLimitsModel = new TransactionLimitsModel();
+  require_once __DIR__ . '/../../connection/db.php';
+  require_once __DIR__ . '/../../models/WalletsModel.php';
+  require_once __DIR__ . '/../../models/VerificationsModel.php';
+  require_once __DIR__ . '/../../models/TransactionsModel.php';
+  require_once __DIR__ . '/../../models/UsersModel.php';
+  require_once __DIR__ . '/../../models/TransactionLimitsModel.php';
+  require_once __DIR__ . '/../../utils/verify_jwt.php';
 
-    // Ensure the user is verified
-    $verification = $verificationsModel->getVerificationByUserId($userId);
-    if (!$verification || $verification['is_validated'] != 1) {
-        echo json_encode(['error' => 'Your account is not verified. You cannot withdraw.']);
-        exit;
-    }
-
-    // Get and validate the withdrawal amount
-    $data = json_decode(file_get_contents("php://input"), true);
-    $amount = floatval($data['amount']);
-    if ($amount <= 0) {
-        echo json_encode(['error' => 'Invalid withdrawal amount']);
-        exit;
-    }
-
-    // Get user's tier and corresponding transaction limits
-    $user = $usersModel->getUserById($userId);
-    $tier = $user ? $user['tier'] : 'regular';
-    $limits = $transactionLimitsModel->getTransactionLimitByTier($tier);
-    if (!$limits) {
-        echo json_encode(['error' => 'Transaction limits not defined for your tier']);
-        exit;
-    }
-
-    // Calculate current usage for daily, weekly, and monthly transactions
-    try {
-        $dailyStmt = $conn->prepare("
-            SELECT COALESCE(SUM(amount), 0) AS total 
-            FROM transactions 
-            WHERE sender_id = :user_id 
-              AND DATE(created_at) = CURDATE() 
-              AND transaction_type IN ('withdrawal', 'transfer')
-        ");
-        $dailyStmt->execute(['user_id' => $userId]);
-        $dailyTotal = floatval($dailyStmt->fetch(PDO::FETCH_ASSOC)['total']);
-
-        $weeklyStmt = $conn->prepare("
-            SELECT COALESCE(SUM(amount), 0) AS total 
-            FROM transactions 
-            WHERE sender_id = :user_id 
-              AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) 
-              AND transaction_type IN ('withdrawal', 'transfer')
-        ");
-        $weeklyStmt->execute(['user_id' => $userId]);
-        $weeklyTotal = floatval($weeklyStmt->fetch(PDO::FETCH_ASSOC)['total']);
-
-        $monthlyStmt = $conn->prepare("
-            SELECT COALESCE(SUM(amount), 0) AS total 
-            FROM transactions 
-            WHERE sender_id = :user_id 
-              AND MONTH(created_at) = MONTH(CURDATE()) 
-              AND YEAR(created_at) = YEAR(CURDATE()) 
-              AND transaction_type IN ('withdrawal', 'transfer')
-        ");
-        $monthlyStmt->execute(['user_id' => $userId]);
-        $monthlyTotal = floatval($monthlyStmt->fetch(PDO::FETCH_ASSOC)['total']);
-    } catch (PDOException $e) {
-        echo json_encode(['error' => $e->getMessage()]);
-        exit;
-    }
-
-    // Check if the new withdrawal exceeds transaction limits
-    if (($dailyTotal + $amount) > floatval($limits['daily_limit'])) {
-        echo json_encode(['error' => 'Daily withdrawal limit exceeded']);
-        exit;
-    }
-    if (($weeklyTotal + $amount) > floatval($limits['weekly_limit'])) {
-        echo json_encode(['error' => 'Weekly withdrawal limit exceeded']);
-        exit;
-    }
-    if (($monthlyTotal + $amount) > floatval($limits['monthly_limit'])) {
-        echo json_encode(['error' => 'Monthly withdrawal limit exceeded']);
-        exit;
-    }
-
-    // Verify wallet balance and update it if sufficient
-    //$wallet = $walletsModel->getWalletByUserId($userId);
-    $wallet = $walletsModel->getWalletByUserAndCoin($userId, 'USDT');
-
-    if (!$wallet) {
-        echo json_encode(['error' => 'Wallet not found']);
-        exit;
-    }
-    if (floatval($wallet['balance']) < $amount) {
-        echo json_encode(['error' => 'Insufficient funds']);
-        exit;
-    }
-    $newBalance = floatval($wallet['balance']) - $amount;
-    //$walletsModel->update($wallet['id'], $userId, $newBalance);
-        $walletsModel->updateBalance($userId, 'USDT', $newBalance);
-
-    // Record the withdrawal transaction
-    $transactionsModel->create($userId, NULL, 'withdrawal', $amount);
-
-    // Send an email confirmation if the user's email is available
-    $userEmail = $user ? $user['email'] : null;
-    if ($userEmail) {
-        $mailer = new MailService();
-        $subject = "Withdrawal Confirmation";
-        $body = "
-            <h1>Withdrawal Successful</h1>
-            <p>You have withdrawn <strong>{$amount} USDT</strong> from your wallet.</p>
-            <p>Your new balance is: <strong>{$newBalance} USDT</strong></p>
-        ";
-        $mailer->sendMail($userEmail, $subject, $body);
-    }
-
-    // Return the new balance and a success message
-    echo json_encode(['newBalance' => $newBalance, 'message' => 'Withdrawal successful']);
-} catch (PDOException $e) {
-    echo json_encode(['error' => $e->getMessage()]);
+  // PHPMailer autoload (project root/vendor) — from user/v1 go up 3 levels
+  $autoload = __DIR__ . '/../../../vendor/autoload.php';
+  if (file_exists($autoload)) {
+    require_once $autoload;
+  } else {
+    error_log("PHPMailer autoload not found at: $autoload");
+  }
+} catch (Throwable $e) {
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage()] : []);
 }
-?>
+
+// ---------- Auth ----------
+$phase = 'auth';
+try {
+  $headers = function_exists('getallheaders') ? getallheaders() : [];
+  $auth = $headers['Authorization'] ?? ($headers['authorization'] ?? '');
+  [$bearer, $jwt] = array_pad(explode(' ', $auth, 2), 2, null);
+  if ($bearer !== 'Bearer' || empty($jwt)) derr('Invalid or missing Authorization header', 401);
+
+  // MUST match the secret used when generating your JWT at login/google-oauth
+  $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY";
+  $decoded = verify_jwt($jwt, $jwt_secret);
+  if (!$decoded) derr('Invalid or expired token', 401);
+  $userId = (int)$decoded['id'];
+
+} catch (Throwable $e) {
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage()] : []);
+}
+
+// ---------- Input ----------
+$phase = 'input';
+try {
+  $data   = json_decode(file_get_contents("php://input"), true) ?: [];
+  $amount = isset($data['amount']) ? (float)$data['amount'] : 0.0;
+  if ($amount <= 0) derr('Invalid withdrawal amount');
+} catch (Throwable $e) {
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage()] : []);
+}
+
+// ---------- Business logic ----------
+$phase = 'withdraw';
+try {
+  $walletsModel       = new WalletsModel();
+  $verificationsModel = new VerificationsModel();
+  $transactionsModel  = new TransactionsModel();
+  $usersModel         = new UsersModel();
+  $transactionLimitsModel = new TransactionLimitsModel();
+
+  // Ensure the user is verified
+  $verification = $verificationsModel->getVerificationByUserId($userId);
+  if (!$verification || (int)$verification['is_validated'] !== 1) {
+    derr('Your account is not verified. You cannot withdraw.');
+  }
+
+  // Get user, tier and limits
+  $user = $usersModel->getUserById($userId);
+  $tier = $user['tier'] ?? 'regular';
+  $limits = $transactionLimitsModel->getTransactionLimitByTier($tier);
+  if (!$limits) derr('Transaction limits not defined for your tier');
+
+  // Calculate current usage for daily, weekly, and monthly (using PDO $conn)
+  global $conn;
+  $dailyStmt = $conn->prepare("
+      SELECT COALESCE(SUM(amount), 0) AS total 
+      FROM transactions 
+      WHERE sender_id = :user_id 
+        AND DATE(created_at) = CURDATE() 
+        AND transaction_type IN ('withdrawal', 'transfer')
+  ");
+  $dailyStmt->execute(['user_id' => $userId]);
+  $dailyTotal = (float)$dailyStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+  $weeklyStmt = $conn->prepare("
+      SELECT COALESCE(SUM(amount), 0) AS total 
+      FROM transactions 
+      WHERE sender_id = :user_id 
+        AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1) 
+        AND transaction_type IN ('withdrawal', 'transfer')
+  ");
+  $weeklyStmt->execute(['user_id' => $userId]);
+  $weeklyTotal = (float)$weeklyStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+  $monthlyStmt = $conn->prepare("
+      SELECT COALESCE(SUM(amount), 0) AS total 
+      FROM transactions 
+      WHERE sender_id = :user_id 
+        AND MONTH(created_at) = MONTH(CURDATE()) 
+        AND YEAR(created_at) = YEAR(CURDATE()) 
+        AND transaction_type IN ('withdrawal', 'transfer')
+  ");
+  $monthlyStmt->execute(['user_id' => $userId]);
+  $monthlyTotal = (float)$monthlyStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+  // Check limits with new withdrawal
+  if (($dailyTotal + $amount)   > (float)$limits['daily_limit'])   derr('Daily withdrawal limit exceeded');
+  if (($weeklyTotal + $amount)  > (float)$limits['weekly_limit'])  derr('Weekly withdrawal limit exceeded');
+  if (($monthlyTotal + $amount) > (float)$limits['monthly_limit']) derr('Monthly withdrawal limit exceeded');
+
+  // Verify wallet balance and update
+  $wallet = $walletsModel->getWalletByUserAndCoin($userId, 'USDT');
+  if (!$wallet) derr('Wallet not found');
+  if ((float)$wallet['balance'] < $amount) derr('Insufficient funds');
+
+  $newBalance = (float)$wallet['balance'] - $amount;
+  $walletsModel->updateBalance($userId, 'USDT', $newBalance);
+
+  // Record the withdrawal transaction (keep your existing signature)
+  $transactionsModel->create($userId, null, 'withdrawal', $amount);
+
+} catch (Throwable $e) {
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage()] : []);
+}
+
+// ---------- Email (non-fatal) ----------
+$phase = 'email';
+$emailSent  = false;
+$emailError = null;
+try {
+  $userEmail = $user['email'] ?? null;
+  if ($userEmail && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+    $fmtAmount = number_format($amount, 2, '.', '');
+    $fmtBal    = number_format($newBalance, 2, '.', '');
+    $subject   = "Withdrawal Confirmation";
+    $htmlBody  = "
+      <h2>Withdrawal Successful</h2>
+      <p>You have withdrawn <strong>{$fmtAmount} USDT</strong> from your wallet.</p>
+      <p>Your new balance is <strong>{$fmtBal} USDT</strong>.</p>
+      <hr>
+      <p>If you did not make this transaction, please contact support immediately.</p>
+    ";
+    $altBody   = "Withdrawal {$fmtAmount} USDT. New balance: {$fmtBal} USDT.";
+
+    // Your Gmail + App Password (no spaces)
+    $gmailUser = 'amirbaddour675@gmail.com';
+    $appPass   = 'lqtkykunvmmuhsvj';
+
+    // Try STARTTLS/587, then fallback to SMTPS/465
+    try {
+      $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+      $mail->isSMTP();
+      $mail->Host       = 'smtp.gmail.com';
+      $mail->SMTPAuth   = true;
+      $mail->Username   = $gmailUser;
+      $mail->Password   = $appPass;
+      $mail->Port       = 587;
+      $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+      $mail->CharSet    = 'UTF-8';
+      $mail->setFrom($gmailUser, 'Digital Wallet');
+      $mail->addAddress($userEmail);
+      $mail->isHTML(true);
+      $mail->Subject = $subject;
+      $mail->Body    = $htmlBody;
+      $mail->AltBody = $altBody;
+      // Debug if needed:
+      // $mail->SMTPDebug   = 2;
+      // $mail->Debugoutput = function($s){ error_log('PHPMailer: '.trim($s)); };
+      $mail->send();
+      $emailSent = true;
+    } catch (Throwable $e1) {
+      try {
+        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = $gmailUser;
+        $mail->Password   = $appPass;
+        $mail->Port       = 465;
+        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+        $mail->CharSet    = 'UTF-8';
+        $mail->setFrom($gmailUser, 'Digital Wallet');
+        $mail->addAddress($userEmail);
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $htmlBody;
+        $mail->AltBody = $altBody;
+        $mail->send();
+        $emailSent = true;
+      } catch (Throwable $e2) {
+        $emailError = $e2->getMessage();
+        error_log('withdraw email error: ' . $emailError);
+      }
+    }
+  } else {
+    if (!$userEmail) $emailError = 'Missing recipient email';
+    if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) $emailError = 'PHPMailer not installed';
+  }
+} catch (Throwable $e) {
+  $emailError = $e->getMessage();
+  error_log('withdraw email error: ' . $emailError);
+}
+
+// ---------- Success ----------
+out([
+  'newBalance' => (float)$newBalance,
+  'message'    => 'Withdrawal successful',
+  'emailSent'  => (bool)$emailSent,
+  'emailError' => $emailError,     // optional (remove for prod)
+  'dev_phase'  => $DEBUG ? $phase : null
+]);

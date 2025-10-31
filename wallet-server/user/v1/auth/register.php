@@ -92,7 +92,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $fullName = explode('@', $email)[0];
 
         $userProfilesModel->create($user_id, $fullName, null, '', '', '', '');
-        $walletsModel->create($user_id, 0.00);
+        $walletsModel->create($user_id, 0.00, 0.00);
         $verificationsModel->create($user_id, null, 0, 'User not verified yet');
 
         // Generate JWT

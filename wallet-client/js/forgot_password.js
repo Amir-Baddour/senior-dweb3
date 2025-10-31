@@ -1,33 +1,84 @@
-document.addEventListener("DOMContentLoaded", function () {
-  // Initialize forgot password functionality
-  const forgotPasswordForm = document.getElementById("forgotPasswordForm");
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("forgotPasswordForm");
+  const emailInput = document.getElementById("email");
 
-  forgotPasswordForm.addEventListener("submit", function (e) {
+  let status = document.getElementById("forgotStatus");
+  if (!status) {
+    status = document.createElement("div");
+    status.id = "forgotStatus";
+    status.style.marginTop = "10px";
+    form.appendChild(status);
+  }
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-
-    // Get and validate the email input
-    const email = document.getElementById("email").value.trim();
+    const email = emailInput.value.trim();
     if (!email) {
-      // Exit if email is missing
+      status.textContent = "Please enter your email.";
+      status.style.color = "crimson";
       return;
     }
 
-    // Prepare form data for the password reset request
-    const data = new FormData();
-    data.append("email", email);
+    const btn = form.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Sending...";
 
-    // Make API call to request a password reset
-    axios.post("http://ec2-13-38-91-228.eu-west-3.compute.amazonaws.com/user/v1/request_password_reset.php", data)
-      .then(response => {
-        if (!response.data.error) {
-          // On success, redirect to login page
-          window.location.href = "login.html";
+    try {
+      const data = new FormData();
+      data.append("email", email);
+
+      console.groupCollapsed("[ForgotPassword] Request");
+      console.log("POST → /wallet-server/user/v1/request_password_reset.php", { email });
+
+      const res = await axios.post(
+        "http://localhost/digital-wallet-plateform/wallet-server/user/v1/request_password_reset.php",
+        data
+      );
+
+      console.log("Response:", res.data);
+      console.groupEnd();
+
+      if (res.data.error) {
+        status.textContent = res.data.error;
+        status.style.color = "crimson";
+        return;
+      }
+
+      // Always show success text
+      status.innerHTML = "If this email exists, a reset link has been sent.";
+      status.style.color = "seagreen";
+
+      // 🔊 Extra console info about email sending
+      if (typeof res.data.email_sent !== "undefined") {
+        console.info("[ForgotPassword] email_sent:", res.data.email_sent);
+      }
+      if (res.data.email_error) {
+        console.warn("[ForgotPassword] email_error:", res.data.email_error);
+      }
+
+      // DEV: show link even if email failed to send
+      if (res.data.dev_reset_link) {
+        const a = document.createElement("a");
+        a.href = res.data.dev_reset_link;
+        a.textContent = "Open reset link";
+        a.style.display = "block";
+        a.style.marginTop = "6px";
+        status.appendChild(a);
+
+        if (res.data.email_sent === false) {
+          const warn = document.createElement("div");
+          warn.textContent = "Email could not be sent (see console). Use the link above during development.";
+          warn.style.color = "orange";
+          warn.style.marginTop = "6px";
+          status.appendChild(warn);
         }
-        // Error responses can be handled here (e.g., log error or update UI)
-      })
-      .catch(error => {
-        console.error("Error requesting password reset:", error);
-        // Handle network or unexpected errors
-      });
+      }
+
+    } catch (err) {
+      console.error("[ForgotPassword] Network/JS error:", err);
+      status.textContent = "Network error. Check the PHP endpoint path.";
+      status.style.color = "crimson";
+    } finally {
+      btn.disabled = false; btn.textContent = "Reset Password";
+    }
   });
 });
