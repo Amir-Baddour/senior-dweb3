@@ -3,7 +3,7 @@ header("Content-Type: application/json");
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowed = [
-  'https://senior-dweb3-844g.vercel.app', // Vercel
+  'https://web03-phi.vercel.app', // Vercel
   'http://localhost',                      // local testing
   'http://127.0.0.1'
 ];
