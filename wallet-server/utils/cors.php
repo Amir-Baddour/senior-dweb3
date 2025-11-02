@@ -1,28 +1,24 @@
 <?php
-// utils/cors.php
+if (!headers_sent()) {
+  $allowed_origins = [
+    'https://yourwallet0.vercel.app',
+    'https://faces-wood-energy-catalog.trycloudflare.com',
+    'http://localhost',
+    'http://127.0.0.1'
+  ];
 
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowed = [
-  'http://localhost',
-  'http://127.0.0.1',
-  'https://senior-dweb3-844g.vercel.app',  // your frontend on Vercel
-  'https://cagelike-georgina-unrustically.ngrok-free.dev', // your ngrok backend URL
-];
+  $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+  if (in_array($origin, $allowed_origins)) {
+    header("Access-Control-Allow-Origin: $origin");
+  }
 
+  header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+  header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+  header("Content-Type: application/json; charset=UTF-8");
 
-// Send EXACTLY ONE Access-Control-Allow-Origin (never combine with "*")
-if ($origin && in_array($origin, $allowed_origins, true)) {
-  header("Access-Control-Allow-Origin: $origin");
-  header("Vary: Origin");
-  // Only if you actually need cookies/sessions cross-site:
-  // header("Access-Control-Allow-Credentials: true");
-}
-
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-
-// Preflight short-circuit
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(204);
-  exit;
+  // Handle preflight OPTIONS requests
+  if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+  }
 }

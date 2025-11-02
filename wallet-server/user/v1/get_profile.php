@@ -1,10 +1,5 @@
 <?php
 ob_start(); // Start buffering
-// Set CORS and JSON response headers
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Content-Type: application/json; charset=UTF-8");
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -23,6 +18,7 @@ require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/UserProfilesModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php'; // Adjust path if needed
+require_once __DIR__ . '/../../utils/cors.php';
 
 // --- JWT Authentication ---
 // Retrieve the Authorization header and verify JWT
