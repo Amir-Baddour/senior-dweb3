@@ -1,5 +1,5 @@
 <?php
-header("Content-Type: application/json");
+
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowed = [
@@ -23,6 +23,7 @@ require_once __DIR__ . '/../../../models/UsersModel.php';
 header('X-Debug: after-users');
 require_once __DIR__ . '/../../../models/VerificationsModel.php';
 header('X-Debug: after-verifications');
+require_once __DIR__ . '/../../utils/cors.php';
 
 /**
  * Generate a simple JWT (for demonstration purposes).
