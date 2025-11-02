@@ -1,8 +1,7 @@
 <?php
 // Enable CORS (for local development)
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json");
 
+require_once __DIR__ . '/../../utils/cors.php';
 $allowed = [
   'https://web03-phi.vercel.app',                           // Your Vercel frontend
   'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL

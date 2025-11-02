@@ -1,12 +1,10 @@
 <?php
 // wallet-server/user/v1/exchange_processor.php
+require_once __DIR__ . '/../../utils/cors.php';
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/WalletsModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
-header("Content-Type: application/json");
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Pragma: no-cache");
 
 $allowed = [
   'https://web03-phi.vercel.app',                           // Your Vercel frontend

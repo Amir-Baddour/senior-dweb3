@@ -7,11 +7,11 @@ $allowed = [
   'http://localhost',
   'http://127.0.0.1'
 ];
-
+require_once __DIR__ . '/../../utils/cors.php';
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/WalletsModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
-require_once __DIR__ . '/../../utils/cors.php';
+
 
 $headers = getallheaders();
 if (!isset($headers['Authorization'])) {

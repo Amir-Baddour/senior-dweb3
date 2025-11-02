@@ -1,7 +1,8 @@
 <?php
-header("Content-Type: application/json");
+
 
 // Include required files and models
+require_once __DIR__ . '/../../utils/cors.php';
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../models/TransactionLimitsModel.php';

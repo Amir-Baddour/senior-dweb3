@@ -1,9 +1,6 @@
 <?php
 // wallet-server/user/v1/deposit.php  (DEV FRIENDLY)
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
+
 
 $DEBUG = true; // ← set to false for production
 
@@ -37,6 +34,7 @@ function derr($msg, $code = 400, $extra = [])
 // ---------- Includes ----------
 $phase = 'includes';
 try {
+  require_once __DIR__ . '/../../utils/cors.php';
   require_once __DIR__ . '/../../connection/db.php';
   require_once __DIR__ . '/../../models/WalletsModel.php';
   require_once __DIR__ . '/../../models/VerificationsModel.php';
