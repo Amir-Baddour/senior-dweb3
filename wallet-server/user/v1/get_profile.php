@@ -1,4 +1,5 @@
 <?php
+ob_start(); // Start buffering
 // Set CORS and JSON response headers
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
