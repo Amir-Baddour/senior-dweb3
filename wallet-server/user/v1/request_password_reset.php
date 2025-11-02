@@ -18,7 +18,12 @@ $checks = [
   'PasswordResetsModel.php' => file_exists($resetsPath),
   'vendor/autoload.php'     => file_exists($autoload),
 ];
-
+$allowed = [
+  'https://web03-phi.vercel.app',                           // Your Vercel frontend
+  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
+  'http://localhost',
+  'http://127.0.0.1'
+];
 // Self-test (open in browser: .../request_password_reset.php?selftest=1)
 if (isset($_GET['selftest'])) {
   echo json_encode([

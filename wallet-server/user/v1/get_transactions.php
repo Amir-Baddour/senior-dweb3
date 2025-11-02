@@ -6,6 +6,13 @@ require_once __DIR__ . '/../../models/TransactionsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
+$allowed = [
+  'https://web03-phi.vercel.app',                           // Your Vercel frontend
+  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
+  'http://localhost',
+  'http://127.0.0.1'
+];
+
 // --- JWT ---
 $headers = getallheaders();
 if (!isset($headers['Authorization'])) { echo json_encode(["error" => "No authorization header."]); exit; }
