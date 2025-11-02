@@ -8,7 +8,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
-
+$allowed = [
+  'https://web03-phi.vercel.app',                           // Your Vercel frontend
+  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
+  'http://localhost',
+  'http://127.0.0.1'
+];
 // Include required files and models
 require_once __DIR__ . '/../../../connection/db.php';
 require_once __DIR__ . '/../../../models/UsersModel.php';
@@ -21,6 +26,7 @@ require_once __DIR__ . '/../../../utils/verify_jwt.php';
 /**
  * Generate a simple JWT.
  */
+
 function generate_jwt(array $payload, string $secret, int $expiry_in_seconds = 3600): string
 {
     $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);

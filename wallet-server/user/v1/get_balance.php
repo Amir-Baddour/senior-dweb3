@@ -4,6 +4,13 @@ header("Content-Type: application/json");
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Pragma: no-cache");
 
+$allowed = [
+  'https://web03-phi.vercel.app',                           // Your Vercel frontend
+  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
+  'http://localhost',
+  'http://127.0.0.1'
+];
+
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/WalletsModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';

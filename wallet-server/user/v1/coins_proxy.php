@@ -4,6 +4,13 @@ header("Content-Type: application/json; charset=utf-8");
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Pragma: no-cache");
 
+$allowed = [
+  'https://web03-phi.vercel.app',                           // Your Vercel frontend
+  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
+  'http://localhost',
+  'http://127.0.0.1'
+];
+
 // Page param (1..5)
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
 if ($page < 1) $page = 1;
