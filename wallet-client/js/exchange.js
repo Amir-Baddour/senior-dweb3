@@ -1,5 +1,7 @@
 // js/exchange.js — any2any v4.4 (hoist-safe, PHP proxies, processor endpoint)
 document.addEventListener("DOMContentLoaded", () => {
+  const { API_BASE_URL } = window.APP_CONFIG; // use config.js setting
+
   // ---------- Elements ----------
   const fromCoinInput = document.getElementById("fromCoin");
   const toCoinInput   = document.getElementById("toCoin");
@@ -19,7 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- Base URLs ----------
   const ROOT = "/" + (location.pathname.split("/").filter(Boolean)[0] || "");
-  const PHP_BASE = `${location.origin}${ROOT}/wallet-server/user/v1`;
+ const PHP_BASE = API_BASE_URL;
+
 
   // ---------- State ----------
   let coins = [];                        // [{id, symbol, name, image}]
