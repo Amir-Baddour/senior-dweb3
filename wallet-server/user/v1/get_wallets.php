@@ -1,9 +1,7 @@
 <?php
 // wallet-server/user/v1/get_wallets.php
-header("Content-Type: application/json");
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Pragma: no-cache");
 
+require_once __DIR__ . '/../../utils/cors.php';
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/WalletsModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';

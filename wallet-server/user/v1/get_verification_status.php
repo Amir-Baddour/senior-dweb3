@@ -1,8 +1,9 @@
 <?php
 // Set JSON response header
-header('Content-Type: application/json');
+
 
 // Include required dependencies
+require_once __DIR__ . '/../../utils/cors.php';
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php'; // Adjust path if necessary
