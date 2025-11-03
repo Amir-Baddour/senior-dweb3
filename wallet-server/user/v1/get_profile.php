@@ -41,8 +41,16 @@ try {
         exit;
     }
     // Fetch user tier from the users table; default to 'regular'
-    $user = $usersModel->getUserById($user_id);
-    $userProfile['tier'] = $user ? $user['tier'] : 'regular';
+    try {
+        $stmt = $conn->prepare("SELECT tier FROM users WHERE id = :id LIMIT 1");
+        $stmt->bindParam(':id', $user_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        // If query fails, default to regular tier
+        $user = null;
+    }
+    $userProfile['tier'] = $user && isset($user['tier']) ? $user['tier'] : 'regular';
 
     echo json_encode(["success" => true, "user" => $userProfile]);
 } catch (PDOException $e) {
