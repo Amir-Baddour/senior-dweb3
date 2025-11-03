@@ -1,39 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register | Digital Wallet</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-</head>
-<body class="register-page">
-  <div class="container register-container">
-    <div class="form-box register-form-box">
-      <h2 class="register-title">Create Your Wallet</h2>
-      <p class="subtext register-subtext">Register to start managing your digital </p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register | Digital Wallet</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="/js/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+  <body class="register-page">
+    <div class="container register-container">
+      <div class="form-box register-form-box">
+        <h2 class="register-title">Create Your Wallet</h2>
+        <p class="subtext register-subtext">
+          Register to start managing your digital
+        </p>
 
-      <form id="registerForm" class="register-form" method="POST">
-        <div class="input-group register-input-group">
-          <input type="email" name="email" id="email" class="register-input" placeholder="Email" required>
-          <small class="error-message register-error-message"></small>
-        </div>
-        <div class="input-group register-input-group">
-          <input type="password" name="password" id="password" class="register-input" placeholder="Password" required minlength="6">
-          <small class="error-message register-error-message"></small>
-        </div>
-        <div class="input-group register-input-group">
-          <input type="password" name="confirm_password" id="confirm_password" class="register-input" placeholder="Confirm Password" required minlength="6">
-          <small class="error-message register-error-message"></small>
-        </div>
-        <button type="submit" class="btn register-btn">Create Wallet</button>
-      </form>
-      <p id="result" style="color: red; margin-top: 10px;"></p>
-      <p class="auth-link">Already have an account? <a href="login.html">Log in</a></p>
+        <form id="registerForm" class="register-form" method="POST">
+          <div class="input-group register-input-group">
+            <input
+              type="email"
+              name="email"
+              id="email"
+              class="register-input"
+              placeholder="Email"
+              required
+            />
+            <small class="error-message register-error-message"></small>
+          </div>
+          <div class="input-group register-input-group">
+            <input
+              type="password"
+              name="password"
+              id="password"
+              class="register-input"
+              placeholder="Password"
+              required
+              minlength="6"
+            />
+            <small class="error-message register-error-message"></small>
+          </div>
+          <div class="input-group register-input-group">
+            <input
+              type="password"
+              name="confirm_password"
+              id="confirm_password"
+              class="register-input"
+              placeholder="Confirm Password"
+              required
+              minlength="6"
+            />
+            <small class="error-message register-error-message"></small>
+          </div>
+          <button type="submit" class="btn register-btn">Create Wallet</button>
+        </form>
+        <p id="result" style="color: red; margin-top: 10px"></p>
+        <p class="auth-link">
+          Already have an account? <a href="login.html">Log in</a>
+        </p>
+      </div>
     </div>
-  </div>
 
-
-  <script src="js/register.js"></script>
-</body>
+    <script src="js/register.js"></script>
+  </body>
 </html>
