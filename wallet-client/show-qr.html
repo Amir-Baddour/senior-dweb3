@@ -1,150 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>My QR | Wallet</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>My QR | Wallet</title>
 
-  <!-- App styles & icons (same as other pages) -->
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- App styles & icons (same as other pages) -->
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <script src="/js/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Small page-specific style -->
+    <style>
+      .qr-page-container {
+        display: grid;
+        gap: 16px;
+      }
+      .qr-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: var(--card-shadow, 0 2px 10px rgba(0, 0, 0, 0.04));
+      }
+      .qr-card-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .qr-card-sub {
+        color: #6b7280;
+        margin-bottom: 16px;
+      }
+      .qr-wrap {
+        display: grid;
+        place-items: center;
+        padding: 12px;
+      }
+      .qr-img {
+        width: 100%;
+        max-width: 320px;
+        aspect-ratio: 1/1;
+        object-fit: contain;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 10px;
+        background: #fafafa;
+      }
+      .qr-actions {
+        text-align: center;
+        margin-top: 12px;
+      }
+      .qr-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 8px 12px;
+        background: #fff;
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .qr-btn:hover {
+        background: #f3f4f6;
+      }
+    </style>
+  </head>
 
-  <!-- Small page-specific style -->
-  <style>
-    .qr-page-container { display: grid; gap: 16px; }
-    .qr-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: var(--card-shadow, 0 2px 10px rgba(0,0,0,0.04));
-    }
-    .qr-card-title {
-      font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0 0 10px 0;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .qr-card-sub { color: #6b7280; margin-bottom: 16px; }
-    .qr-wrap { display: grid; place-items: center; padding: 12px; }
-    .qr-img {
-      width: 100%; max-width: 320px; aspect-ratio: 1/1; object-fit: contain;
-      border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px; background: #fafafa;
-    }
-    .qr-actions { text-align: center; margin-top: 12px; }
-    .qr-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px 12px;
-      background: #fff; color: #2563eb; text-decoration: none; font-weight: 600;
-    }
-    .qr-btn:hover { background: #f3f4f6; }
-  </style>
-</head>
-
-<body class="dashboard-body">
-  <!-- Sidebar (same links as your app) -->
-  <aside class="dashboard-sidebar">
-    <div class="dashboard-sidebar-logo">
-      <i class="fas fa-wallet"></i><span>Wallet</span>
-    </div>
-    <ul class="dashboard-sidebar-links">
-      <li class="dashboard-sidebar-item"><a href="dashboard.html"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
-      <li class="dashboard-sidebar-item"><a href="transfer.html"><i class="fas fa-exchange-alt"></i><span>Transfer</span></a></li>
-      <li class="dashboard-sidebar-item"><a href="transactions.html"><i class="fas fa-receipt"></i><span>Transactions</span></a></li>
-      <li class="dashboard-sidebar-item"><a href="assets.html"><i class="fas fa-chart-pie"></i><span>Assets</span></a></li>
-      <li class="dashboard-sidebar-item"><a href="exchange.html"><i class="fas fa-sync-alt"></i><span>Exchange</span></a></li>
-      <li class="dashboard-sidebar-item"><a href="profile.html"><i class="fas fa-user"></i><span>Account</span></a></li>
-      <li class="dashboard-sidebar-item"><a href="help_center.html"><i class="fas fa-question-circle"></i><span>Help Center</span></a></li>
-      <li class="dashboard-sidebar-item active"><a href="show-qr.html"><i class="fas fa-qrcode"></i><span>My QR</span></a></li>
-      <li class="dashboard-sidebar-item"><a href="#" onclick="toggleChatBox?.();return false;"><i class="fas fa-comments"></i><span>Live Chat</span></a></li>
-      <li class="dashboard-sidebar-item"><a href="#" onclick="logout?.();return false;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
-    </ul>
-  </aside>
-
-  <!-- Main -->
-  <main class="dashboard-main">
-    <!-- Header (same component) -->
-    <header class="dashboard-header">
-      <div class="dashboard-user">
-        <div class="dashboard-user-avatar"><i class="fas fa-user"></i></div>
-        <div class="dashboard-user-info">
-          <h2 class="dashboard-user-name">User</h2>
-          <p class="dashboard-user-meta">User Level: regular</p>
-        </div>
+  <body class="dashboard-body">
+    <!-- Sidebar (same links as your app) -->
+    <aside class="dashboard-sidebar">
+      <div class="dashboard-sidebar-logo">
+        <i class="fas fa-wallet"></i><span>Wallet</span>
       </div>
-      <div class="dashboard-header-actions">
-        <button class="dashboard-deposit-btn" onclick="location.href='deposit.html'">Deposit</button>
-        <button class="dashboard-withdraw-btn" onclick="location.href='withdraw.html'">Withdraw</button>
-      </div>
-    </header>
+      <ul class="dashboard-sidebar-links">
+        <li class="dashboard-sidebar-item">
+          <a href="dashboard.html"
+            ><i class="fas fa-home"></i><span>Dashboard</span></a
+          >
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="transfer.html"
+            ><i class="fas fa-exchange-alt"></i><span>Transfer</span></a
+          >
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="transactions.html"
+            ><i class="fas fa-receipt"></i><span>Transactions</span></a
+          >
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="assets.html"
+            ><i class="fas fa-chart-pie"></i><span>Assets</span></a
+          >
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="exchange.html"
+            ><i class="fas fa-sync-alt"></i><span>Exchange</span></a
+          >
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="profile.html"
+            ><i class="fas fa-user"></i><span>Account</span></a
+          >
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="help_center.html"
+            ><i class="fas fa-question-circle"></i><span>Help Center</span></a
+          >
+        </li>
+        <li class="dashboard-sidebar-item active">
+          <a href="show-qr.html"
+            ><i class="fas fa-qrcode"></i><span>My QR</span></a
+          >
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="#" onclick="toggleChatBox?.();return false;"
+            ><i class="fas fa-comments"></i><span>Live Chat</span></a
+          >
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="#" onclick="logout?.();return false;"
+            ><i class="fas fa-sign-out-alt"></i><span>Logout</span></a
+          >
+        </li>
+      </ul>
+    </aside>
 
-    <!-- Content -->
-    <section class="qr-page-container">
-      <div class="qr-card">
-        <h3 class="qr-card-title"><i class="fas fa-qrcode"></i> Scan this QR Code</h3>
-        <div class="qr-card-sub">Use any wallet or scanner app to pay/transfer to your ID.</div>
-        <div class="qr-wrap">
-          <img id="qrImg" class="qr-img" alt="My QR Code" />
-          <div class="qr-actions">
-            <a class="qr-btn" id="openFull" href="show-qr.html"><i class="fas fa-expand"></i>Open full page</a>
+    <!-- Main -->
+    <main class="dashboard-main">
+      <!-- Header (same component) -->
+      <header class="dashboard-header">
+        <div class="dashboard-user">
+          <div class="dashboard-user-avatar"><i class="fas fa-user"></i></div>
+          <div class="dashboard-user-info">
+            <h2 class="dashboard-user-name">User</h2>
+            <p class="dashboard-user-meta">User Level: regular</p>
           </div>
         </div>
-      </div>
-    </section>
-  </main>
+        <div class="dashboard-header-actions">
+          <button
+            class="dashboard-deposit-btn"
+            onclick="location.href='deposit.html'"
+          >
+            Deposit
+          </button>
+          <button
+            class="dashboard-withdraw-btn"
+            onclick="location.href='withdraw.html'"
+          >
+            Withdraw
+          </button>
+        </div>
+      </header>
 
-  <!-- (optional) Live chat container if your CSS expects it -->
-  <div id="chat-box" style="display:none"></div>
+      <!-- Content -->
+      <section class="qr-page-container">
+        <div class="qr-card">
+          <h3 class="qr-card-title">
+            <i class="fas fa-qrcode"></i> Scan this QR Code
+          </h3>
+          <div class="qr-card-sub">
+            Use any wallet or scanner app to pay/transfer to your ID.
+          </div>
+          <div class="qr-wrap">
+            <img id="qrImg" class="qr-img" alt="My QR Code" />
+            <div class="qr-actions">
+              <a class="qr-btn" id="openFull" href="show-qr.html"
+                ><i class="fas fa-expand"></i>Open full page</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
 
-  <!-- Page logic -->
-  <script>
-    // Auth guard
-    const token = localStorage.getItem('jwt') || sessionStorage.getItem('jwt');
-    if (!token) { location.href = 'login.html'; }
-    const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
+    <!-- (optional) Live chat container if your CSS expects it -->
+    <div id="chat-box" style="display: none"></div>
 
-    // Fill header name/tier like other pages
-    (function loadProfileForHeader() {
-      const nameEl = document.querySelector('.dashboard-user-name');
-      const metaEl = document.querySelector('.dashboard-user-meta');
-      axios.get('http://localhost/digital-wallet-plateform/wallet-server/user/v1/get_profile.php', axiosConfig)
-        .then(({data}) => {
-          if (data?.success) {
-            const u = data.user || {};
-            const fullName = (u.full_name || '').trim();
-            const tier = (u.tier || 'regular').trim();
-            if (nameEl) nameEl.textContent = fullName || 'User';
-            if (metaEl) metaEl.textContent = `User Level: ${tier || 'regular'}`;
+    <!-- Page logic -->
+    <script>
+      // Auth guard
+      const token =
+        localStorage.getItem("jwt") || sessionStorage.getItem("jwt");
+      if (!token) {
+        location.href = "login.html";
+      }
+      const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
 
-            const uid = u.id || u.user_id;
-            setQr(uid);
-          } else {
-            setQr(null);
-          }
-        })
-        .catch(() => setQr(null));
-    })();
+      // Fill header name/tier like other pages
+      (function loadProfileForHeader() {
+        const nameEl = document.querySelector(".dashboard-user-name");
+        const metaEl = document.querySelector(".dashboard-user-meta");
+        axios
+          .get(
+            "http://localhost/digital-wallet-plateform/wallet-server/user/v1/get_profile.php",
+            axiosConfig
+          )
+          .then(({ data }) => {
+            if (data?.success) {
+              const u = data.user || {};
+              const fullName = (u.full_name || "").trim();
+              const tier = (u.tier || "regular").trim();
+              if (nameEl) nameEl.textContent = fullName || "User";
+              if (metaEl)
+                metaEl.textContent = `User Level: ${tier || "regular"}`;
 
-    function setQr(userId) {
-      const img = document.getElementById('qrImg');
-      if (!img) return;
+              const uid = u.id || u.user_id;
+              setQr(uid);
+            } else {
+              setQr(null);
+            }
+          })
+          .catch(() => setQr(null));
+      })();
 
-      // fallback amount—you can compute from UI if you want
-      const params = new URLSearchParams({
-        recipient_id: String(userId || ''),
-        amount: '10'
-      });
+      function setQr(userId) {
+        const img = document.getElementById("qrImg");
+        if (!img) return;
 
-      img.src = 'http://localhost/digital-wallet-plateform/wallet-server/utils/generate_qr.php?' + params.toString();
-      // Keep "Open full page" target in case you change params later
-      const full = document.getElementById('openFull');
-      if (full) full.href = 'show-qr.html?' + params.toString();
-    }
-  </script>
+        // fallback amount—you can compute from UI if you want
+        const params = new URLSearchParams({
+          recipient_id: String(userId || ""),
+          amount: "10",
+        });
 
-  <!-- Optional shared scripts if your layout needs them -->
-  <script src="js/logout.js"></script>
-  <script src="js/live_chat.js"></script>
-</body>
+        img.src =
+          "http://localhost/digital-wallet-plateform/wallet-server/utils/generate_qr.php?" +
+          params.toString();
+        // Keep "Open full page" target in case you change params later
+        const full = document.getElementById("openFull");
+        if (full) full.href = "show-qr.html?" + params.toString();
+      }
+    </script>
+
+    <!-- Optional shared scripts if your layout needs them -->
+    <script src="js/logout.js"></script>
+    <script src="js/live_chat.js"></script>
+  </body>
 </html>

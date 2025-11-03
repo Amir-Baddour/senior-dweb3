@@ -1,238 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Exchange</title>
-  <link rel="stylesheet" href="css/style.css">
-  
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <style>
-     .convert-card {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      padding: 32px;
-      max-width: 500px;
-      margin: 40px auto;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .transaction-title {
-      text-align: center;
-      font-size: 24px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin-bottom: 24px;
-    }
-    .convert-section label {
-      font-weight: 600;
-      display: block;
-      margin-bottom: 8px;
-      font-size: 15px;
-    }
-    .convert-box {
-      background: #f1f3f6;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 24px;
-    }
-    .coin-dropdown {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      margin-bottom: 8px;
-      font-size: 14px;
-      background-color: #fff;
-    }
-    .balance {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 10px;
-    }
-    input[type="number"], input[type="text"] {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 15px;
-      background-color: #fff;
-    }
-    .switch-arrow {
-      text-align: center;
-      margin: 16px 0;
-    }
-    .switch-arrow i {
-      font-size: 24px;
-      color: #bbb;
-    }
-    .rate-display {
-      text-align: center;
-      font-size: 14px;
-      color: #333;
-      margin-bottom: 24px;
-    }
-    .transaction-btn {
-      background: linear-gradient(90deg, #f6c500, #e5b700);
-      border: none;
-      padding: 14px;
-      width: 100%;
-      border-radius: 10px;
-      font-weight: bold;
-      color: #000;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    .transaction-btn:hover {
-      background: linear-gradient(90deg, #e5b700, #f6c500);
-    }
-    .dropdown-list {
-  list-style: none;
-  border: 1px solid #ccc;
-  max-height: 150px;
-  overflow-y: auto;
-  background: white;
-  padding: 0;
-  margin: 0;
-  position: absolute;
-  z-index: 100;
-  width: 90%;
-  display: none;
-}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Exchange</title>
+    <link rel="stylesheet" href="css/style.css" />
 
-.dropdown-list li {
-  padding: 10px;
-  cursor: pointer;
-}
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+    />
+    <script src="/js/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+      .convert-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        padding: 32px;
+        max-width: 500px;
+        margin: 40px auto;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+      .transaction-title {
+        text-align: center;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 24px;
+      }
+      .convert-section label {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 8px;
+        font-size: 15px;
+      }
+      .convert-box {
+        background: #f1f3f6;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      .coin-dropdown {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        font-size: 14px;
+        background-color: #fff;
+      }
+      .balance {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 10px;
+      }
+      input[type="number"],
+      input[type="text"] {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 15px;
+        background-color: #fff;
+      }
+      .switch-arrow {
+        text-align: center;
+        margin: 16px 0;
+      }
+      .switch-arrow i {
+        font-size: 24px;
+        color: #bbb;
+      }
+      .rate-display {
+        text-align: center;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 24px;
+      }
+      .transaction-btn {
+        background: linear-gradient(90deg, #f6c500, #e5b700);
+        border: none;
+        padding: 14px;
+        width: 100%;
+        border-radius: 10px;
+        font-weight: bold;
+        color: #000;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+      .transaction-btn:hover {
+        background: linear-gradient(90deg, #e5b700, #f6c500);
+      }
+      .dropdown-list {
+        list-style: none;
+        border: 1px solid #ccc;
+        max-height: 150px;
+        overflow-y: auto;
+        background: white;
+        padding: 0;
+        margin: 0;
+        position: absolute;
+        z-index: 100;
+        width: 90%;
+        display: none;
+      }
 
-.dropdown-list li:hover {
-  background-color: #eee;
-}
-  </style>
-</head>
-<body class="dashboard-body">
+      .dropdown-list li {
+        padding: 10px;
+        cursor: pointer;
+      }
 
-  <!-- Sidebar Navigation -->
-  <aside class="dashboard-sidebar">
-    <div class="dashboard-sidebar-logo">
-      <i class="fas fa-wallet"></i>
-      <span>Wallet</span>
-    </div>
-    <ul class="dashboard-sidebar-links">
-      <li class="dashboard-sidebar-item">
-        <a href="dashboard.html">
-          <i class="fas fa-home"></i>
-          <span>Dashboard</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="transfer.html">
-          <i class="fas fa-exchange-alt"></i>
-          <span>Transfer</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="transactions.html">
-          <i class="fas fa-receipt"></i>
-          <span>Transactions</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-       <a href="assets.html">
-          <i class="fas fa-chart-pie"></i>
-          <span>Assets</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item active">
-      <a href="exchange.html">
-        <i class="fas fa-sync-alt"></i>
-        <span>Exchange</span>
-      </a>
-     </li>
-      <li class="dashboard-sidebar-item">
-        <a href="profile.html">
-          <i class="fas fa-user"></i>
-          <span>Account</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="help_center.html">
-          <i class="fas fa-question-circle"></i>
-          <span>Help Center</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="#" onclick="toggleChatBox(); return false;">
-        <i class="fas fa-comments"></i>
-        <span>Live Chat</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="#" onclick="logout(); return false;">
-          <i class="fas fa-sign-out-alt"></i>
-          <span>Logout</span>
-        </a>
-      </li>
-    </ul>
-  </aside>
-
-  <!-- Live Chat Box -->
-  <div id="chat-box">
-    <div id="chat-header">
-      AI Support
-      <span id="close-chat" onclick="toggleChatBox()">✖</span>
-    </div>
-    <div id="chat-messages"></div>
-    <input type="text" id="chat-input" placeholder="Ask a question..." onkeydown="handleKey(event)">
-  </div>
-
-  <!-- Main Content Area -->
- <main class="dashboard-main">
-    <section class="transaction-container">
-      <h2 class="transaction-title">Coin Exchange</h2>
-
-      <div class="convert-card">
-        <div class="convert-section">
-          <label for="fromCoin">From</label>
-          <div class="convert-box">
-           <input type="text" id="fromCoin" class="coin-dropdown" placeholder="Type a coin..." autocomplete="off">
-            <ul id="fromCoinList" class="dropdown-list"></ul>
-            <p class="balance">Available Balance: <span id="fromBalance">0.000000</span></p>
-            <input type="number" id="fromAmount" placeholder="Enter amount" min="0" step="0.000001">
-          </div>
-        </div>
-
-        <div class="switch-arrow">
-          <i class="fas fa-arrows-alt-v"></i>
-        </div>
-
-        <div class="convert-section">
-          <label for="toCoin">To</label>
-          <div class="convert-box">
-            <input type="text" id="toCoin" class="coin-dropdown" placeholder="Type a coin..." autocomplete="off">
-             <ul id="toCoinList" class="dropdown-list"></ul>
-            <p class="balance">Available Balance: <span id="toBalance">0.000000</span></p>
-            <input type="text" id="toAmount" disabled>
-          </div>
-        </div>
-
-        <div class="rate-display">
-          <p id="conversionRate">Rate: 1 ? = ?</p>
-        </div>
-
-        <button id="convertBtn" class="transaction-btn">Convert</button>
+      .dropdown-list li:hover {
+        background-color: #eee;
+      }
+    </style>
+  </head>
+  <body class="dashboard-body">
+    <!-- Sidebar Navigation -->
+    <aside class="dashboard-sidebar">
+      <div class="dashboard-sidebar-logo">
+        <i class="fas fa-wallet"></i>
+        <span>Wallet</span>
       </div>
-    </section>
-  </main>
+      <ul class="dashboard-sidebar-links">
+        <li class="dashboard-sidebar-item">
+          <a href="dashboard.html">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="transfer.html">
+            <i class="fas fa-exchange-alt"></i>
+            <span>Transfer</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="transactions.html">
+            <i class="fas fa-receipt"></i>
+            <span>Transactions</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="assets.html">
+            <i class="fas fa-chart-pie"></i>
+            <span>Assets</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item active">
+          <a href="exchange.html">
+            <i class="fas fa-sync-alt"></i>
+            <span>Exchange</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="profile.html">
+            <i class="fas fa-user"></i>
+            <span>Account</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="help_center.html">
+            <i class="fas fa-question-circle"></i>
+            <span>Help Center</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="#" onclick="toggleChatBox(); return false;">
+            <i class="fas fa-comments"></i>
+            <span>Live Chat</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="#" onclick="logout(); return false;">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
 
+    <!-- Live Chat Box -->
+    <div id="chat-box">
+      <div id="chat-header">
+        AI Support
+        <span id="close-chat" onclick="toggleChatBox()">✖</span>
+      </div>
+      <div id="chat-messages"></div>
+      <input
+        type="text"
+        id="chat-input"
+        placeholder="Ask a question..."
+        onkeydown="handleKey(event)"
+      />
+    </div>
 
-  <!-- Scripts -->
-  <script src="js/exchange.js"></script>
-  <script src="js/dashboard.js"></script>
-  <script src="js/live_chat.js"></script>
-  <script src="js/logout.js"></script>
+    <!-- Main Content Area -->
+    <main class="dashboard-main">
+      <section class="transaction-container">
+        <h2 class="transaction-title">Coin Exchange</h2>
 
-</body>
+        <div class="convert-card">
+          <div class="convert-section">
+            <label for="fromCoin">From</label>
+            <div class="convert-box">
+              <input
+                type="text"
+                id="fromCoin"
+                class="coin-dropdown"
+                placeholder="Type a coin..."
+                autocomplete="off"
+              />
+              <ul id="fromCoinList" class="dropdown-list"></ul>
+              <p class="balance">
+                Available Balance: <span id="fromBalance">0.000000</span>
+              </p>
+              <input
+                type="number"
+                id="fromAmount"
+                placeholder="Enter amount"
+                min="0"
+                step="0.000001"
+              />
+            </div>
+          </div>
+
+          <div class="switch-arrow">
+            <i class="fas fa-arrows-alt-v"></i>
+          </div>
+
+          <div class="convert-section">
+            <label for="toCoin">To</label>
+            <div class="convert-box">
+              <input
+                type="text"
+                id="toCoin"
+                class="coin-dropdown"
+                placeholder="Type a coin..."
+                autocomplete="off"
+              />
+              <ul id="toCoinList" class="dropdown-list"></ul>
+              <p class="balance">
+                Available Balance: <span id="toBalance">0.000000</span>
+              </p>
+              <input type="text" id="toAmount" disabled />
+            </div>
+          </div>
+
+          <div class="rate-display">
+            <p id="conversionRate">Rate: 1 ? = ?</p>
+          </div>
+
+          <button id="convertBtn" class="transaction-btn">Convert</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/exchange.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/live_chat.js"></script>
+    <script src="js/logout.js"></script>
+  </body>
 </html>
