@@ -2,7 +2,7 @@
 if (!headers_sent()) {
   $allowed_origins = [
     'https://yourwallet0.vercel.app',                         // your frontend
-    'https://celebs-gained-park-leader.trycloudflare.com',    // ✅ your current active tunnel
+    'https://boxed-reserve-relief-desktop.trycloudflare.com',     // ✅ your current active tunnel
     'http://localhost',
     'http://127.0.0.1'
   ];
