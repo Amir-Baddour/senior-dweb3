@@ -17,7 +17,9 @@ const API_BASE = (() => {
     return "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
 
   // PRODUCTION FALLBACK: your CURRENT HTTPS ngrok base (replace below)
-  return "https://<YOUR-CURRENT>.ngrok-free.app/digital-wallet-plateform/wallet-server/user/v1";
+  // PRODUCTION FALLBACK: use Cloudflare Tunnel
+return "https://faces-wood-energy-catalog.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
+
 })();
 console.log("[login.js] EFFECTIVE API_BASE =", API_BASE);
 
