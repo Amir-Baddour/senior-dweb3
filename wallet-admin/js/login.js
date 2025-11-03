@@ -14,7 +14,7 @@ document.getElementById('adminLoginForm').addEventListener('submit', function(e)
                   localStorage.setItem('admin_jwt', response.data.token);
               }
               // Redirect to the admin dashboard
-              window.location.href = '/digital-wallet-plateform/wallet-admin/dashboard.html';
+              window.location.href = '/wallet-admin/dashboard.html';
           } else {
               // Log unexpected responses for debugging purposes
               console.error("Unexpected response from server.", response.data);
