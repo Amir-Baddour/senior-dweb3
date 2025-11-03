@@ -18,8 +18,8 @@ const API_BASE = (() => {
 
   // PRODUCTION FALLBACK: your CURRENT HTTPS ngrok base (replace below)
   // PRODUCTION FALLBACK: use Cloudflare Tunnel
-return "https://faces-wood-energy-catalog.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
-
+// Line 21 in login.js - CHANGE THIS:
+return "https://boxed-reserve-relief-desktop.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
 })();
 console.log("[login.js] EFFECTIVE API_BASE =", API_BASE);
 
