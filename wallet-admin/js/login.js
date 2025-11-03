@@ -13,10 +13,10 @@ document.getElementById('adminLoginForm').addEventListener('submit', function(e)
                   localStorage.setItem('admin_jwt', response.data.token);
               }
               
-              // ✅ Force a clean navigation with a tiny delay
-              setTimeout(function() {
-                  window.location.replace('dashboard.html');
-              }, 100);
+              // ✅ Create a temporary anchor element to force GET navigation
+              const link = document.createElement('a');
+              link.href = 'dashboard.html';
+              link.click();
           } else {
               // Log unexpected responses for debugging purposes
               console.error("Unexpected response from server.", response.data);
