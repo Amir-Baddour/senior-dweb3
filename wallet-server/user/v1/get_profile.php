@@ -1,5 +1,5 @@
 <?php
-
+ob_start();
 // Include required files and models
 require_once __DIR__ . '/../../utils/cors.php';
 require_once __DIR__ . '/../../connection/db.php';
