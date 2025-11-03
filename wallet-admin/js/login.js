@@ -4,7 +4,8 @@ document.getElementById('adminLoginForm').addEventListener('submit', function(e)
   // Build form data from the form fields
   const formData = new FormData(this);
 
-  axios.post("http://localhost/digital-wallet-plateform/wallet-server/admin/v1/auth/login.php", formData)
+  // ✅ Use the admin config instead of hardcoded localhost
+  axios.post(`${window.ADMIN_CONFIG.API_BASE_URL}/auth/login.php`, formData)
       .then(function(response) {
           // Check if the server returned a valid response with a message and success status
           if (response.data && response.data.status === 'success') {
