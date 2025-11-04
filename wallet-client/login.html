@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>User Login | Digital Wallet</title>
     <link rel="stylesheet" href="css/style.css" />
+    <script src="/wallet-client/js/config.js"
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <!-- INLINE CONFIG: put this right before login.js -->
     <script>
@@ -17,19 +18,6 @@
     </script>
 
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script>
-      (function () {
-        const isLocal =
-          location.hostname === "localhost" ||
-          location.hostname === "127.0.0.1";
-        const LOCAL_API =
-          "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
-        const PROD_API =
-          "https://<YOUR>.ngrok-free.app/digital-wallet-plateform/wallet-server/user/v1"; // HTTPS ngrok
-        window.APP_CONFIG = { API_BASE_URL: isLocal ? LOCAL_API : PROD_API };
-        console.log("[config] API_BASE_URL =", window.APP_CONFIG.API_BASE_URL);
-      })();
-    </script>
   </head>
   <body class="login-page">
     <div class="container login-container">
@@ -87,25 +75,7 @@
       </div>
     </div>
 
-    <script>
-      (function () {
-        const isLocal =
-          location.hostname === "localhost" ||
-          location.hostname === "127.0.0.1";
-        const LOCAL_API =
-          "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
-        const PROD_API =
-          "https://cagelike-georgina-unrustically.ngrok-free.dev/digital-wallet-plateform/wallet-server/user/v1";
-        window.APP_CONFIG = { API_BASE_URL: isLocal ? LOCAL_API : PROD_API };
-        console.log(
-          "[config-inline] API_BASE_URL =",
-          window.APP_CONFIG.API_BASE_URL
-        );
-      })();
-    </script>
-    <script src="/js/config.js?v=6"></script>
-   <script src="./js/login.js"></script>
-
+    <script src="./js/login.js"></script>
 
     <script>
       // define callback as a real function BEFORE loading GSI
