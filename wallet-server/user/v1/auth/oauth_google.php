@@ -5,14 +5,7 @@
  * id, email, password, role (0/1), is_validated (0/1), created_at, updated_at
  */
 
-header("Content-Type: application/json");
-
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-];
+require_once __DIR__ . '/../../../utils/cors.php';
 // === CONFIG ===
 $GOOGLE_CLIENT_ID = "795971820374-r745mbqe2tkget78iqo6fv29hlpapdpk.apps.googleusercontent.com"; // must match login.html
 $JWT_SECRET       = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // use env in production

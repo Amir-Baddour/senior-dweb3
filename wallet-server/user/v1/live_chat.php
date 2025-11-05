@@ -2,12 +2,6 @@
 // Enable CORS (for local development)
 
 require_once __DIR__ . '/../../utils/cors.php';
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-];
 
 // Read user message
 $data = json_decode(file_get_contents("php://input"), true);

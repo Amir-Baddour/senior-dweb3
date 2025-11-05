@@ -1,20 +1,5 @@
 <?php
-// wallet-server/user/v1/transfer.php
-header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-];
-error_reporting(E_ALL);
-ini_set('log_errors', 1);
-ini_set('display_errors', 0);
+require_once __DIR__ . '/../../utils/cors.php';
 
 function out($a){ echo json_encode($a, JSON_UNESCAPED_SLASHES); exit; }
 function fail($m,$c=400,$extra=[]){ if ($c) http_response_code($c); out(array_merge(['error'=>$m],$extra)); }

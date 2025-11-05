@@ -1,17 +1,10 @@
 <?php
-// request_password_reset.php - Handles password reset requests securely.
-header("Content-Type: application/json");
-
+require_once __DIR__ . '/../../utils/cors.php';
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../models/PasswordResetsModel.php';
 require_once __DIR__ . '/../../utils/MailService.php';
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-];
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // Retrieve and validate the email input
     $email = trim($_POST["email"]);

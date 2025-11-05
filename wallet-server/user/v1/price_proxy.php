@@ -1,16 +1,5 @@
 <?php
-// wallet-server/user/v1/price_proxy.php
-header("Content-Type: application/json; charset=utf-8");
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Pragma: no-cache");
-
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-];
-
+require_once __DIR__ . '/../../utils/cors.php';
 $coin = isset($_GET['coin']) ? strtolower(trim($_GET['coin'])) : '';
 if ($coin === '' || !preg_match('/^[a-z0-9\-]+$/', $coin)) {
     http_response_code(400);

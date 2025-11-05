@@ -1,10 +1,5 @@
 <?php
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-];
+require_once __DIR__ . '/../../utils/cors.php';
 declare(strict_types=1);
 $r = isset($_GET['r']) ? (int)$_GET['r'] : 0;
 $a = isset($_GET['a']) ? (int)$_GET['a'] : 0; // cents
