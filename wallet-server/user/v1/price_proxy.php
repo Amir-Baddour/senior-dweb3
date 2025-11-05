@@ -1,4 +1,5 @@
 <?php
+ob_start();
 require_once __DIR__ . '/../../utils/cors.php';
 $coin = isset($_GET['coin']) ? strtolower(trim($_GET['coin'])) : '';
 if ($coin === '' || !preg_match('/^[a-z0-9\-]+$/', $coin)) {

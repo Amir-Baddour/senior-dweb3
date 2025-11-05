@@ -1,4 +1,6 @@
 <?php
+ob_start();
+
 require_once __DIR__ . '/../../utils/cors.php';
 
 require_once __DIR__ . '/../../connection/db.php';

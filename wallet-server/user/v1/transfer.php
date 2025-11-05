@@ -1,4 +1,6 @@
 <?php
+ob_start();
+
 require_once __DIR__ . '/../../utils/cors.php';
 
 function out($a){ echo json_encode($a, JSON_UNESCAPED_SLASHES); exit; }
