@@ -1,16 +1,10 @@
 <?php
-// reset_password.php - Processes password reset requests via token validation.
-header("Content-Type: application/json");
+require_once __DIR__ . '/../../utils/cors.php';
 
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../models/PasswordResetsModel.php';
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-];
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // Retrieve input values
     $token = trim($_POST["token"]);

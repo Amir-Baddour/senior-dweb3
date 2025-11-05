@@ -1,10 +1,5 @@
 <?php
-// wallet-server/user/v1/request_password_reset.php
-header('Content-Type: application/json');
-
-error_reporting(E_ALL);
-ini_set('log_errors', 1);
-ini_set('display_errors', 0); // keep JSON clean
+require
 
 // ---------- Resolve and verify include paths (from user/v1/) ----------
 $dbPath     = __DIR__ . '/../../connection/db.php';
@@ -12,18 +7,7 @@ $usersPath  = __DIR__ . '/../../models/UsersModel.php';
 $resetsPath = __DIR__ . '/../../models/PasswordResetsModel.php';
 $autoload   = __DIR__ . '/../../../vendor/autoload.php'; // project-root/vendor
 
-$checks = [
-  'db.php'                  => file_exists($dbPath),
-  'UsersModel.php'          => file_exists($usersPath),
-  'PasswordResetsModel.php' => file_exists($resetsPath),
-  'vendor/autoload.php'     => file_exists($autoload),
-];
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-];
+
 // Self-test (open in browser: .../request_password_reset.php?selftest=1)
 if (isset($_GET['selftest'])) {
   echo json_encode([

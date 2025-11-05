@@ -1,20 +1,6 @@
 <?php
 // wallet-server/user/v1/withdraw.php  (DEV-FRIENDLY)
-
-
-$DEBUG = true; // set to false for production
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-];
-error_reporting(E_ALL);
-ini_set('log_errors', 1);
-ini_set('display_errors', 0);
-
+require_once __DIR__ . '/../../utils/cors.php';
 function out($arr){ echo json_encode($arr, JSON_UNESCAPED_SLASHES); exit; }
 function derr($msg,$code=400,$extra=[]){ if ($code) http_response_code($code); out(array_merge(['error'=>$msg],$extra)); }
 

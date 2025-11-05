@@ -1,9 +1,8 @@
 <?php
 if (!headers_sent()) {
   $allowed_origins = [
-    'https://yourwallet0.vercel.app',  // your frontend
-    'https://adminpanel-two-rose.vercel.app',                       
-    'https://boxed-reserve-relief-desktop.trycloudflare.com',     // ✅ your current active tunnel
+    'https://yourwallet0.vercel.app',
+    'https://hugh-girls-pumps-neither.trycloudflare.com',
     'http://localhost',
     'http://127.0.0.1'
   ];
@@ -16,7 +15,6 @@ if (!headers_sent()) {
 
   header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
   header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-  header("Access-Control-Allow-Credentials: true");
   header("Content-Type: application/json; charset=UTF-8");
 
   if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -24,3 +22,4 @@ if (!headers_sent()) {
     exit;
   }
 }
+?>

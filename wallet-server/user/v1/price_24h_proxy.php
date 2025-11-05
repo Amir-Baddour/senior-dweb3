@@ -1,16 +1,5 @@
 <?php
-// wallet-server/user/v1/price_24h_proxy.php
-// Returns current and ~24h-ago USDT prices for a coin (via CoinGecko)
-
-header("Content-Type: application/json");
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Pragma: no-cache");
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-]; 
+require_once __DIR__ . '/../../utils/cors.php';
 $coin = isset($_GET['coin']) ? trim($_GET['coin']) : '';
 if ($coin === '') {
   http_response_code(400);
