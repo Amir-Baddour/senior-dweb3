@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (balanceAmountElem) {
     async function fetchBalance() {
       try {
-        const rAll = await axios.get(`${API_BASE_URL}/get_balance.php`, axiosConfig);
+        const rAll = await axios.get(`${API_BASE_URL}/get_balances.php`, axiosConfig);
         const map = rAll.data?.balances || {};
         if (map && Object.keys(map).length) {
           if (map.USDT !== undefined)
