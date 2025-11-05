@@ -1,6 +1,7 @@
 <?php
 ob_start();
-require_once __DIR__ . '/../../utils/cors.php';
+require_once __DIR__ . '/../../../utils/cors.php';
+
 // Page param (1..5)
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
 if ($page < 1) $page = 1;
@@ -8,14 +9,17 @@ if ($page > 5) $page = 5;
 
 // Cache (per page)
 $cacheDir = sys_get_temp_dir();
-$cacheKey = "cg_coins_p{$page}.json";      // normalized cache with price_usd
+$cacheKey = "cg_coins_p{$page}.json";
 $cacheFile = $cacheDir . DIRECTORY_SEPARATOR . $cacheKey;
 $cacheTtl = 45; // seconds
 
 // Serve cache if fresh
 if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTtl)) {
     $raw = file_get_contents($cacheFile);
-    if ($raw !== false) { echo $raw; exit; }
+    if ($raw !== false) {
+        echo $raw;
+        exit;
+    }
 }
 
 $url = "https://api.coingecko.com/api/v3/coins/markets"
