@@ -1,4 +1,5 @@
 <?php
+ob_start();
 require_once __DIR__ . '/../../../utils/cors.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

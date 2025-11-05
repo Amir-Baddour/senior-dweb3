@@ -1,6 +1,7 @@
 <?php
 // wallet-server/user/v1/deposit.php  (DEV FRIENDLY)
-
+ob_start();
+require_once __DIR__ . '/../../utils/cors.php';
 
 $DEBUG = true; // ← set to false for production
 
@@ -9,12 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   exit;
 }
 
-$allowed = [
-  'https://web03-phi.vercel.app',                           // Your Vercel frontend
-  'https://faces-wood-energy-catalog.trycloudflare.com',    // Your new tunnel URL
-  'http://localhost',
-  'http://127.0.0.1'
-];
 
 error_reporting(E_ALL);
 ini_set('log_errors', 1);

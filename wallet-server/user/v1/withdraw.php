@@ -1,5 +1,7 @@
 <?php
 // wallet-server/user/v1/withdraw.php  (DEV-FRIENDLY)
+ob_start();
+
 require_once __DIR__ . '/../../utils/cors.php';
 function out($arr){ echo json_encode($arr, JSON_UNESCAPED_SLASHES); exit; }
 function derr($msg,$code=400,$extra=[]){ if ($code) http_response_code($code); out(array_merge(['error'=>$msg],$extra)); }
