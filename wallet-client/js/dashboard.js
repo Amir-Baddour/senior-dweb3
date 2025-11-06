@@ -1,4 +1,4 @@
-// js/dashboard.js — FIXED VERSION (Updated for correct API format)
+// js/dashboard.js — COMPLETE FIXED VERSION
 document.addEventListener("DOMContentLoaded", function () {
   // ✅ Use config with fallback
   const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || 
@@ -25,17 +25,29 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
         
-        const user = response.data?.user;
-        if (user) {
+        // ✅ Handle both response.data.user and direct response.data formats
+        const user = response.data?.user || response.data;
+        
+        if (user && !user.error) {
           const nameElem = document.querySelector(".dashboard-user-name");
           const metaElem = document.querySelector(".dashboard-user-meta");
           
-          // ✅ FIX: Use username, first_name, or email in that priority
-          const displayName = user.username || user.first_name || user.email || "User";
+          // ✅ Build full name with priority: first_name + last_name, username, or email
+          let displayName = "User";
+          
+          if (user.first_name && user.last_name) {
+            displayName = `${user.first_name} ${user.last_name}`;
+          } else if (user.first_name) {
+            displayName = user.first_name;
+          } else if (user.username) {
+            displayName = user.username;
+          } else if (user.email) {
+            displayName = user.email.split('@')[0]; // Use email prefix if nothing else
+          }
           
           if (nameElem) nameElem.textContent = displayName;
           
-          // ✅ FIX: Show tier instead of role
+          // ✅ Show tier instead of role
           const tierLabel = user.tier === 'premium' ? 'Premium User' : 
                            user.tier === 'vip' ? 'VIP User' : 'Regular User';
           if (metaElem) metaElem.textContent = `VIP Level: ${tierLabel}`;
@@ -141,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function () {
         
         const data = response.data || {};
         
-        // ✅ FIX: Handle the actual API format
+        // ✅ Handle the actual API format
         // API returns: { dailyUsed, dailyLimit, weeklyUsed, weeklyLimit, monthlyUsed, monthlyLimit }
         const dailyBar = document.getElementById("dailyBar");
         const dailyInfo = document.getElementById("dailyInfo");
@@ -159,14 +171,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Weekly
         const weeklyUsed = data.weeklyUsed || 0;
-        const weeklyLimit = data.weeklyLimit || 1000;
+        const weeklyLimit = data.weeklyLimit || 2000;
         const weeklyPct = weeklyLimit > 0 ? (weeklyUsed / weeklyLimit) * 100 : 0;
         if (weeklyBar) weeklyBar.style.width = `${weeklyPct}%`;
         if (weeklyInfo) weeklyInfo.textContent = `${weeklyUsed} / ${weeklyLimit}`;
 
         // Monthly
         const monthlyUsed = data.monthlyUsed || 0;
-        const monthlyLimit = data.monthlyLimit || 2000;
+        const monthlyLimit = data.monthlyLimit || 5000;
         const monthlyPct = monthlyLimit > 0 ? (monthlyUsed / monthlyLimit) * 100 : 0;
         if (monthlyBar) monthlyBar.style.width = `${monthlyPct}%`;
         if (monthlyInfo) monthlyInfo.textContent = `${monthlyUsed} / ${monthlyLimit}`;
@@ -180,8 +192,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const monthlyInfo = document.getElementById("monthlyInfo");
         
         if (dailyInfo) dailyInfo.textContent = "0 / 500";
-        if (weeklyInfo) weeklyInfo.textContent = "0 / 1000";
-        if (monthlyInfo) monthlyInfo.textContent = "0 / 2000";
+        if (weeklyInfo) weeklyInfo.textContent = "0 / 2000";
+        if (monthlyInfo) monthlyInfo.textContent = "0 / 5000";
       });
   }
 });
