@@ -1,5 +1,4 @@
 <?php
-ob_start();
 require_once __DIR__ . '/../../../utils/cors.php';
 
 // Page param (1..5)
@@ -17,6 +16,7 @@ $cacheTtl = 45; // seconds
 if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTtl)) {
     $raw = file_get_contents($cacheFile);
     if ($raw !== false) {
+        header('Content-Type: application/json');
         echo $raw;
         exit;
     }
