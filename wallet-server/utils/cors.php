@@ -2,13 +2,16 @@
 if (!headers_sent()) {
   $allowed_origins = [
     'https://yourwallet0.vercel.app',
-    'https://hugh-girls-pumps-neither.trycloudflare.com',
     'http://localhost',
     'http://127.0.0.1'
   ];
 
   $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-  if (in_array($origin, $allowed_origins, true)) {
+  
+  // ✅ Auto-allow any trycloudflare.com subdomain
+  $is_cloudflare_tunnel = str_ends_with($origin, '.trycloudflare.com');
+  
+  if (in_array($origin, $allowed_origins, true) || $is_cloudflare_tunnel) {
     header("Access-Control-Allow-Origin: $origin");
     header("Vary: Origin");
   }

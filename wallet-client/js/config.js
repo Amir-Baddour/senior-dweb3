@@ -1,13 +1,14 @@
 (function () {
   const isLocal =
     location.hostname === "localhost" || location.hostname === "127.0.0.1";
-  const LOCAL_API =
-    "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
+  
+  const basePath = "/digital-wallet-plateform/wallet-server/user/v1";
+  
+  // ✅ Simple: Always use current origin + path
+  const API_BASE_URL = isLocal 
+    ? `http://localhost${basePath}`
+    : `${location.origin}${basePath}`;
 
-  // ✅ Cloudflare Tunnel URL
-  const PROD_API =
-    "https://hugh-girls-pumps-neither.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
-
-  window.APP_CONFIG = { API_BASE_URL: isLocal ? LOCAL_API : PROD_API };
-  console.log("[config] API_BASE_URL =", window.APP_CONFIG.API_BASE_URL);
+  window.APP_CONFIG = { API_BASE_URL };
+  console.log("[config] API_BASE_URL =", API_BASE_URL);
 })();
