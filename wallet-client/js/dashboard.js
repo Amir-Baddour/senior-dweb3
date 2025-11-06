@@ -32,10 +32,12 @@ document.addEventListener("DOMContentLoaded", function () {
           const nameElem = document.querySelector(".dashboard-user-name");
           const metaElem = document.querySelector(".dashboard-user-meta");
           
-          // ✅ Build full name with priority: first_name + last_name, username, or email
+          // ✅ Build display name with priority: full_name, first_name + last_name, username, or email
           let displayName = "User";
           
-          if (user.first_name && user.last_name) {
+          if (user.full_name && user.full_name.trim()) {
+            displayName = user.full_name;
+          } else if (user.first_name && user.last_name) {
             displayName = `${user.first_name} ${user.last_name}`;
           } else if (user.first_name) {
             displayName = user.first_name;
