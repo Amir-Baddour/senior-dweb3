@@ -164,26 +164,49 @@ document.addEventListener("DOMContentLoaded", function () {
         const monthlyBar = document.getElementById("monthlyBar");
         const monthlyInfo = document.getElementById("monthlyInfo");
 
+        // Helper function to set bar color based on usage percentage
+        function setBarColor(bar, percentage) {
+          if (!bar) return;
+          if (percentage >= 90) {
+            bar.style.backgroundColor = '#ef4444'; // Red for 90%+
+          } else if (percentage >= 70) {
+            bar.style.backgroundColor = '#f59e0b'; // Orange for 70-89%
+          } else if (percentage >= 50) {
+            bar.style.backgroundColor = '#eab308'; // Yellow for 50-69%
+          } else {
+            bar.style.backgroundColor = '#10b981'; // Green for 0-49%
+          }
+        }
+
         // Daily
         const dailyUsed = data.dailyUsed || 0;
         const dailyLimit = data.dailyLimit || 500;
         const dailyPct = dailyLimit > 0 ? (dailyUsed / dailyLimit) * 100 : 0;
-        if (dailyBar) dailyBar.style.width = `${dailyPct}%`;
-        if (dailyInfo) dailyInfo.textContent = `${dailyUsed} / ${dailyLimit}`;
+        if (dailyBar) {
+          dailyBar.style.width = `${Math.min(dailyPct, 100)}%`;
+          setBarColor(dailyBar, dailyPct);
+        }
+        if (dailyInfo) dailyInfo.textContent = `${dailyUsed.toFixed(2)} / ${dailyLimit}`;
 
         // Weekly
         const weeklyUsed = data.weeklyUsed || 0;
         const weeklyLimit = data.weeklyLimit || 2000;
         const weeklyPct = weeklyLimit > 0 ? (weeklyUsed / weeklyLimit) * 100 : 0;
-        if (weeklyBar) weeklyBar.style.width = `${weeklyPct}%`;
-        if (weeklyInfo) weeklyInfo.textContent = `${weeklyUsed} / ${weeklyLimit}`;
+        if (weeklyBar) {
+          weeklyBar.style.width = `${Math.min(weeklyPct, 100)}%`;
+          setBarColor(weeklyBar, weeklyPct);
+        }
+        if (weeklyInfo) weeklyInfo.textContent = `${weeklyUsed.toFixed(2)} / ${weeklyLimit}`;
 
         // Monthly
         const monthlyUsed = data.monthlyUsed || 0;
         const monthlyLimit = data.monthlyLimit || 5000;
         const monthlyPct = monthlyLimit > 0 ? (monthlyUsed / monthlyLimit) * 100 : 0;
-        if (monthlyBar) monthlyBar.style.width = `${monthlyPct}%`;
-        if (monthlyInfo) monthlyInfo.textContent = `${monthlyUsed} / ${monthlyLimit}`;
+        if (monthlyBar) {
+          monthlyBar.style.width = `${Math.min(monthlyPct, 100)}%`;
+          setBarColor(monthlyBar, monthlyPct);
+        }
+        if (monthlyInfo) monthlyInfo.textContent = `${monthlyUsed.toFixed(2)} / ${monthlyLimit}`;
       })
       .catch((error) => {
         console.error("Limits fetch error:", error);
