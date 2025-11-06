@@ -1,8 +1,8 @@
-// js/dashboard.js — fixed version
+// js/dashboard.js — FIXED VERSION (Updated for correct API format)
 document.addEventListener("DOMContentLoaded", function () {
-  // ✅ SAFE: Use optional chaining with fallback
+  // ✅ Use config with fallback
   const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || 
-    'https://boxed-reserve-relief-desktop.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1';
+    'https://sixth-audit-valuable-until.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1';
   
   console.log('[dashboard.js] Using API_BASE_URL:', API_BASE_URL);
 
@@ -18,19 +18,34 @@ document.addEventListener("DOMContentLoaded", function () {
     axios
       .get(`${API_BASE_URL}/get_profile.php`, axiosConfig)
       .then((response) => {
+        console.log('[dashboard.js] Profile response:', response.data);
+        
         if (response.data?.error) {
           console.error("Profile error:", response.data.error);
           return;
         }
+        
         const user = response.data?.user;
         if (user) {
           const nameElem = document.querySelector(".dashboard-user-name");
           const metaElem = document.querySelector(".dashboard-user-meta");
-          if (nameElem) nameElem.textContent = user.email || "User";
-          if (metaElem) metaElem.textContent = `VIP Level: ${user.role === 1 ? "Admin" : "Regular User"}`;
+          
+          // ✅ FIX: Use username, first_name, or email in that priority
+          const displayName = user.username || user.first_name || user.email || "User";
+          
+          if (nameElem) nameElem.textContent = displayName;
+          
+          // ✅ FIX: Show tier instead of role
+          const tierLabel = user.tier === 'premium' ? 'Premium User' : 
+                           user.tier === 'vip' ? 'VIP User' : 'Regular User';
+          if (metaElem) metaElem.textContent = `VIP Level: ${tierLabel}`;
         }
       })
-      .catch((error) => console.error("Profile fetch error:", error));
+      .catch((error) => {
+        console.error("Profile fetch error:", error);
+        const nameElem = document.querySelector(".dashboard-user-name");
+        if (nameElem) nameElem.textContent = "Error Loading Profile";
+      });
   }
 
   // ===== VERIFICATION =====
@@ -38,12 +53,14 @@ document.addEventListener("DOMContentLoaded", function () {
     axios
       .get(`${API_BASE_URL}/get_verification_status.php`, axiosConfig)
       .then((response) => {
+        console.log('[dashboard.js] Verification response:', response.data);
+        
         const data = response.data || {};
         const titleElem = document.getElementById("verificationTitle");
         const msgElem = document.getElementById("verificationMessage");
         const btnElem = document.getElementById("verificationButton");
 
-        if (data.is_validated) {
+        if (data.is_validated || data.is_verified) {
           if (titleElem) titleElem.textContent = "✓ Verified";
           if (msgElem) msgElem.textContent = "Your account is verified.";
           if (btnElem) btnElem.style.display = "none";
@@ -65,24 +82,31 @@ document.addEventListener("DOMContentLoaded", function () {
   if (balanceAmountElem) {
     async function fetchBalance() {
       try {
-        const rAll = await axios.get(`${API_BASE_URL}/get_balances.php`, axiosConfig);
-        const map = rAll.data?.balances || {};
-        if (map && Object.keys(map).length) {
-          if (map.USDT !== undefined)
-            return { amount: Number(map.USDT), symbol: "USDT" };
-          const [sym, amt] = Object.entries(map).sort((a, b) => Number(b[1]) - Number(a[1]))[0] || ["USDT", 0];
-          return { amount: Number(amt || 0), symbol: sym };
+        const response = await axios.get(`${API_BASE_URL}/get_balances.php`, axiosConfig);
+        console.log('[dashboard.js] Balance response:', response.data);
+        
+        const data = response.data;
+        
+        // ✅ Handle the actual API format: { success: true, balances: { USDT: 100 } }
+        if (data.success && data.balances) {
+          const balances = data.balances;
+          
+          // Prefer USDT if available
+          if (balances.USDT !== undefined) {
+            return { amount: Number(balances.USDT), symbol: "USDT" };
+          }
+          
+          // Otherwise get the first available balance
+          const entries = Object.entries(balances);
+          if (entries.length > 0) {
+            const [symbol, amount] = entries[0];
+            return { amount: Number(amount), symbol };
+          }
         }
+        
+        return { amount: 0, symbol: "USDT" };
       } catch (err) {
-        console.error("get_balance.php failed:", err);
-      }
-      
-      // Fallback
-      try {
-        const r = await axios.get(`${API_BASE_URL}/get_balances.php`, axiosConfig);
-        return { amount: Number(r.data?.balance ?? 0), symbol: "USDT" };
-      } catch (err) {
-        console.error("get_balances.php failed:", err);
+        console.error("Balance fetch failed:", err);
         throw err;
       }
     }
@@ -91,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         balanceAmountElem.textContent = "Loading...";
         const { amount, symbol } = await fetchBalance();
-        balanceAmountElem.textContent = `${amount} ${symbol}`;
+        balanceAmountElem.textContent = `${amount.toFixed(2)} ${symbol}`;
       } catch {
         balanceAmountElem.textContent = "Error Loading Balance";
       }
@@ -105,7 +129,6 @@ document.addEventListener("DOMContentLoaded", function () {
     qrImg.src = `${API_BASE_URL}/../../utils/generate_qr.php?recipient_id=${encodeURIComponent(userId)}&amount=10`;
   }
 
-  // Call setQr if you have userId available
   const userId = localStorage.getItem("userId");
   if (userId) setQr(userId);
 
@@ -114,8 +137,12 @@ document.addEventListener("DOMContentLoaded", function () {
     axios
       .get(`${API_BASE_URL}/get_limits_usage.php`, axiosConfig)
       .then((response) => {
+        console.log('[dashboard.js] Limits response:', response.data);
+        
         const data = response.data || {};
         
+        // ✅ FIX: Handle the actual API format
+        // API returns: { dailyUsed, dailyLimit, weeklyUsed, weeklyLimit, monthlyUsed, monthlyLimit }
         const dailyBar = document.getElementById("dailyBar");
         const dailyInfo = document.getElementById("dailyInfo");
         const weeklyBar = document.getElementById("weeklyBar");
@@ -123,24 +150,38 @@ document.addEventListener("DOMContentLoaded", function () {
         const monthlyBar = document.getElementById("monthlyBar");
         const monthlyInfo = document.getElementById("monthlyInfo");
 
-        if (data.daily) {
-          const dailyPct = data.daily.limit > 0 ? (data.daily.used / data.daily.limit) * 100 : 0;
-          if (dailyBar) dailyBar.style.width = `${dailyPct}%`;
-          if (dailyInfo) dailyInfo.textContent = `${data.daily.used} / ${data.daily.limit}`;
-        }
+        // Daily
+        const dailyUsed = data.dailyUsed || 0;
+        const dailyLimit = data.dailyLimit || 500;
+        const dailyPct = dailyLimit > 0 ? (dailyUsed / dailyLimit) * 100 : 0;
+        if (dailyBar) dailyBar.style.width = `${dailyPct}%`;
+        if (dailyInfo) dailyInfo.textContent = `${dailyUsed} / ${dailyLimit}`;
 
-        if (data.weekly) {
-          const weeklyPct = data.weekly.limit > 0 ? (data.weekly.used / data.weekly.limit) * 100 : 0;
-          if (weeklyBar) weeklyBar.style.width = `${weeklyPct}%`;
-          if (weeklyInfo) weeklyInfo.textContent = `${data.weekly.used} / ${data.weekly.limit}`;
-        }
+        // Weekly
+        const weeklyUsed = data.weeklyUsed || 0;
+        const weeklyLimit = data.weeklyLimit || 1000;
+        const weeklyPct = weeklyLimit > 0 ? (weeklyUsed / weeklyLimit) * 100 : 0;
+        if (weeklyBar) weeklyBar.style.width = `${weeklyPct}%`;
+        if (weeklyInfo) weeklyInfo.textContent = `${weeklyUsed} / ${weeklyLimit}`;
 
-        if (data.monthly) {
-          const monthlyPct = data.monthly.limit > 0 ? (data.monthly.used / data.monthly.limit) * 100 : 0;
-          if (monthlyBar) monthlyBar.style.width = `${monthlyPct}%`;
-          if (monthlyInfo) monthlyInfo.textContent = `${data.monthly.used} / ${data.monthly.limit}`;
-        }
+        // Monthly
+        const monthlyUsed = data.monthlyUsed || 0;
+        const monthlyLimit = data.monthlyLimit || 2000;
+        const monthlyPct = monthlyLimit > 0 ? (monthlyUsed / monthlyLimit) * 100 : 0;
+        if (monthlyBar) monthlyBar.style.width = `${monthlyPct}%`;
+        if (monthlyInfo) monthlyInfo.textContent = `${monthlyUsed} / ${monthlyLimit}`;
       })
-      .catch((error) => console.error("Limits fetch error:", error));
+      .catch((error) => {
+        console.error("Limits fetch error:", error);
+        
+        // ✅ Show default limits on error
+        const dailyInfo = document.getElementById("dailyInfo");
+        const weeklyInfo = document.getElementById("weeklyInfo");
+        const monthlyInfo = document.getElementById("monthlyInfo");
+        
+        if (dailyInfo) dailyInfo.textContent = "0 / 500";
+        if (weeklyInfo) weeklyInfo.textContent = "0 / 1000";
+        if (monthlyInfo) monthlyInfo.textContent = "0 / 2000";
+      });
   }
 });
