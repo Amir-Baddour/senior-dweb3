@@ -1,7 +1,7 @@
 <?php
 if (!headers_sent()) {
   $allowed_origins = [
-    'https://yourwallet0.vercel.app',
+    'https://yourwallet0.vercel.app',  // ✅ Keep this
     'http://localhost',
     'http://127.0.0.1'
   ];
@@ -9,7 +9,7 @@ if (!headers_sent()) {
   $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
   
   // ✅ Auto-allow any trycloudflare.com subdomain
-  $is_cloudflare_tunnel = str_ends_with($origin, '.trycloudflare.com');
+  $is_cloudflare_tunnel = preg_match('/^https:\/\/[a-z0-9\-]+\.trycloudflare\.com$/', $origin);
   
   if (in_array($origin, $allowed_origins, true) || $is_cloudflare_tunnel) {
     header("Access-Control-Allow-Origin: $origin");
@@ -21,7 +21,6 @@ if (!headers_sent()) {
   header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
   header("Content-Type: application/json; charset=UTF-8");
 
-  // ⚡ Must stop OPTIONS requests before reaching logic
   if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
