@@ -10,8 +10,8 @@
   if (isLocal) {
     API_BASE_URL = `http://localhost${basePath}`;
   } else if (isVercel) {
-    // ✅ Point Vercel to your Cloudflare tunnel backend
-    API_BASE_URL = `https://sixth-audit-valuable-until.trycloudflare.com${basePath}`;
+    // ✅ Updated to new tunnel URL
+    API_BASE_URL = `https://coming-chapter-vintage-handles.trycloudflare.com${basePath}`;
   } else {
     API_BASE_URL = `${location.origin}${basePath}`;
   }
