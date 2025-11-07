@@ -7,17 +7,12 @@
     <link rel="stylesheet" href="css/style.css" />
     <script src="js/config.js?v=9"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <!-- INLINE CONFIG: put this right before login.js -->
-    <script>
-      // Must exist before GSI loads
-      window.handleCredentialResponse = function (googleResponse) {
-        if (window.realHandleCredentialResponse) {
-          window.realHandleCredentialResponse(googleResponse);
-        }
-      };
-    </script>
-
+    <!-- ✅ Load login.js BEFORE Google GSI so handleCredentialResponse is defined -->
+    <script src="./js/login.js"></script>
+    
+    <!-- ✅ Google Sign-In library loads AFTER login.js -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   </head>
   <body class="login-page">
     <div class="container login-container">
@@ -75,14 +70,5 @@
       </div>
     </div>
 
-    
-
-    <script>
-      // define callback as a real function BEFORE loading GSI
-      window.handleCredentialResponse = function (googleResponse) {
-        // login.js also defines it; this keeps GSI happy
-      };
-    </script>
-    <script src="./js/login.js"></script>
   </body>
 </html>

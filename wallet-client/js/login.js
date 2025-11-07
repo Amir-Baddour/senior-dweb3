@@ -6,7 +6,6 @@
 ========================= */
 
 // --- HARD GUARD: pick API base even if config is missing ---
-// HARD GUARD: pick API base even if config didn't load
 const API_BASE = (() => {
   // if inline config ran, use it
   if (window.APP_CONFIG?.API_BASE_URL) return window.APP_CONFIG.API_BASE_URL;
@@ -16,10 +15,8 @@ const API_BASE = (() => {
   if (isLocal)
     return "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
 
-  // PRODUCTION FALLBACK: your CURRENT HTTPS ngrok base (replace below)
-  // PRODUCTION FALLBACK: use Cloudflare Tunnel
-// Line 21 in login.js - CHANGE THIS:
-return "https://boxed-reserve-relief-desktop.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
+  // ✅ PRODUCTION FALLBACK: Current Cloudflare Tunnel
+  return "https://sixth-audit-valuable-until.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
 })();
 console.log("[login.js] EFFECTIVE API_BASE =", API_BASE);
 
@@ -33,9 +30,7 @@ if (
 
 (function () {
   if (!window.APP_CONFIG || !window.APP_CONFIG.API_BASE_URL) {
-    throw new Error(
-      "APP_CONFIG.API_BASE_URL is missing. Load the config <script> before login.js"
-    );
+    console.warn("APP_CONFIG.API_BASE_URL is missing - using fallback");
   }
   if (!window.axios) {
     throw new Error("Axios is not loaded. Include it before login.js");
@@ -43,7 +38,6 @@ if (
 })();
 
 // --- config & HTTP client ---
-//const API_BASE = window.APP_CONFIG.API_BASE_URL; // set by your inline config script
 const ROUTES = {
   passwordLogin: "/auth/login.php",
   googleLogin: "/auth/oauth_google.php",
@@ -54,7 +48,6 @@ console.log("[login.js] ROUTES:", ROUTES);
 
 const http = axios.create({
   baseURL: API_BASE,
-  // Keep false if you’re returning JWT in JSON (not cookies)
   withCredentials: false,
   headers: { Accept: "application/json" },
 });
@@ -68,12 +61,7 @@ function saveSession(token, user) {
   if (user.role !== undefined) localStorage.setItem("userRole", user.role);
 }
 
-/*function redirectToDashboard() {
-  // adjust path if your dashboard lives elsewhere
-  window.location.href = "/dashboard.html";
-}*/
 function redirectToDashboard() {
-  // Get the base URL (works for both local and production)
   const baseUrl = window.location.origin;
   window.location.href = `${baseUrl}/dashboard.html`;
 }
@@ -118,7 +106,6 @@ function extractErr(err, fallback = "Request failed") {
     }
 
     try {
-      // login.php expects POST form fields -> FormData is correct
       const resp = await http.post(ROUTES.passwordLogin, formData);
       const data = resp?.data || {};
 
@@ -146,8 +133,9 @@ function extractErr(err, fallback = "Request failed") {
 /* =========================
    Google One Tap / Button
 ========================= */
-// Google’s GSI calls this globally
-window.realHandleCredentialResponse = async function (googleResponse) {
+window.handleCredentialResponse = async function (googleResponse) {
+  console.log("[login.js] Google credential received");
+  
   try {
     const credential = googleResponse?.credential;
     if (!credential) {
@@ -155,13 +143,16 @@ window.realHandleCredentialResponse = async function (googleResponse) {
       return;
     }
 
-    // oauth_google.php expects JSON { credential }
+    console.log("[login.js] Sending credential to backend...");
+    
     const resp = await http.post(
       ROUTES.googleLogin,
       { credential },
       { headers: { "Content-Type": "application/json" } }
     );
 
+    console.log("[login.js] Backend response:", resp.data);
+    
     const data = resp?.data || {};
     if (data.status === "success" && data.token && data.user) {
       saveSession(data.token, data.user);
@@ -172,16 +163,13 @@ window.realHandleCredentialResponse = async function (googleResponse) {
     showError(data.message || "Google login failed. Please try again.");
   } catch (err) {
     console.error("[login.js] Google login error:", err);
+    console.error("[login.js] Error details:", err.response?.data);
     showError(extractErr(err, "Google login error"));
   }
 };
-(function () {
-  if (!window.APP_CONFIG || !window.APP_CONFIG.API_BASE_URL) {
-    throw new Error(
-      "APP_CONFIG.API_BASE_URL is missing — config script did not load."
-    );
-  }
-})();
+
+// ✅ Add alias for compatibility
+window.realHandleCredentialResponse = window.handleCredentialResponse;
 
 /* =========================
    Optional: clear old session on page load
