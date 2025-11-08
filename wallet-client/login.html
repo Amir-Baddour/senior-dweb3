@@ -5,14 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>User Login | Digital Wallet</title>
     <link rel="stylesheet" href="css/style.css" />
-    <script src="js/config.js?v=9"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <!-- ✅ Load login.js BEFORE Google GSI so handleCredentialResponse is defined -->
-    <script src="./js/login.js"></script>
-    
-    <!-- ✅ Google Sign-In library loads AFTER login.js -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
+   
   </head>
   <body class="login-page">
     <div class="container login-container">
@@ -69,6 +62,14 @@
         </p>
       </div>
     </div>
+  
+     <script src="js/config.js?v=9"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- ✅ Load login.js BEFORE Google GSI so handleCredentialResponse is defined -->
+    <script src="./js/login.js"></script>
+    
+    <!-- ✅ Google Sign-In library loads AFTER login.js -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   </body>
 </html>
