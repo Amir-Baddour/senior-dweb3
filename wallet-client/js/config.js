@@ -1,21 +1,29 @@
+// config.js - API Configuration
 (function () {
+  "use strict";
+
+  // Detect environment
   const isLocal =
-    location.hostname === "localhost" || location.hostname === "127.0.0.1";
-  
-  const isVercel = location.hostname.includes("vercel.app");
-  const basePath = "/digital-wallet-plateform/wallet-server/user/v1";
-  
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+
+  // Set API base URL based on environment
   let API_BASE_URL;
-  
+
   if (isLocal) {
-    API_BASE_URL = `http://localhost${basePath}`;
-  } else if (isVercel) {
-    // ✅ Updated to new tunnel URL
-    API_BASE_URL = `https://coming-chapter-vintage-handles.trycloudflare.com${basePath}`;
+    // Local development
+    API_BASE_URL =
+      "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
   } else {
-    API_BASE_URL = `${location.origin}${basePath}`;
+    // Production - Using NEW Cloudflare Tunnel
+    API_BASE_URL =
+      "https://templates-bridge-michelle-ranked.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
   }
 
-  window.APP_CONFIG = { API_BASE_URL };
+  // Make config globally available
+  window.APP_CONFIG = {
+    API_BASE_URL: API_BASE_URL,
+  };
+
   console.log("[config] API_BASE_URL =", API_BASE_URL);
 })();
