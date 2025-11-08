@@ -16,8 +16,7 @@ const API_BASE = (() => {
     return "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
 
   // ✅ PRODUCTION FALLBACK: Current Cloudflare Tunnel
-  return "https://sixth-audit-valuable-until.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
-})();
+return "https://templates-bridge-michelle-ranked.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";})();
 console.log("[login.js] EFFECTIVE API_BASE =", API_BASE);
 
 // safety: don't allow prod to hit localhost API
