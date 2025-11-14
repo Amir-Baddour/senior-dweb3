@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(response => {
             if (response.data.status === "success") {
-                window.location.href = "/dashboard.html";
+                window.location.href = "dashboard.html";
             }
         })
         .catch(error => {
