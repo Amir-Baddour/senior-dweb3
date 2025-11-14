@@ -1,7 +1,7 @@
 <?php
 if (!headers_sent()) {
   $allowed_origins = [
-    'https://yourwallet0.vercel.app',  // ✅ Keep this
+    'https://yourwallet0.vercel.app',
     'http://localhost',
     'http://127.0.0.1'
   ];
@@ -17,10 +17,15 @@ if (!headers_sent()) {
   }
 
   header("Access-Control-Allow-Credentials: true");
-  header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+  header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
   header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
   header("Content-Type: application/json; charset=UTF-8");
+  
+  // ✅ Add COOP headers for OAuth and security
+  header("Cross-Origin-Opener-Policy: same-origin-allow-popups");
+  header("Cross-Origin-Embedder-Policy: unsafe-none");
 
+  // ✅ Handle OPTIONS preflight requests
   if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
