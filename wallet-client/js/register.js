@@ -31,17 +31,13 @@ document.getElementById('registerForm').addEventListener('submit', async functio
         document.getElementById('result').innerText = data.message;
 
         if (data.status === 'success') {
-            // ✅ Store JWT token
-            if (data.token) {
-                localStorage.setItem('jwt', data.token);
-                localStorage.setItem('userId', data.user.id);
-            }
-            
-            // ✅ Show success message and redirect
+            // ✅ Show success message and redirect to login
             document.getElementById('result').style.color = 'green';
+            document.getElementById('result').innerText = 'Registration successful! Redirecting to login...';
+            
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1500);
+                window.location.href = 'login.html';
+            }, 2000);
         } else {
             // Show error in red
             document.getElementById('result').style.color = 'red';
