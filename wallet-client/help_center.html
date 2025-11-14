@@ -1,132 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Help Center | Digital Wallet</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-</head>
-<body class="dashboard-body">
-  <!-- Sidebar Navigation -->
-  <aside class="dashboard-sidebar">
-    <div class="dashboard-sidebar-logo">
-      <i class="fas fa-wallet"></i>
-      <span>Wallet</span>
-    </div>
-    <ul class="dashboard-sidebar-links">
-      <li class="dashboard-sidebar-item">
-        <a href="dashboard.html">
-          <i class="fas fa-home"></i>
-          <span>Dashboard</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="transfer.html">
-          <i class="fas fa-exchange-alt"></i>
-          <span>Transfer</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-        <a href="transactions.html">
-          <i class="fas fa-receipt"></i>
-          <span>Transactions</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-       <a href="assets.html">
-          <i class="fas fa-chart-pie"></i>
-          <span>Assets</span>
-        </a>
-      </li>
-      <li class="dashboard-sidebar-item">
-      <a href="exchange.html">
-        <i class="fas fa-sync-alt"></i>
-        <span>Exchange</span>
-      </a>
-     </li>
-      <li class="dashboard-sidebar-item">
-        <a href="profile.html">
-          <i class="fas fa-user"></i>
-          <span>Account</span>
-        </a>
-      </li>
-      
-      <li class="dashboard-sidebar-item active">
-        <a href="help_center.html">
-          <i class="fas fa-question-circle"></i>
-          <span>Help Center</span>
-        </a>
-      </li>
-          <li class="dashboard-sidebar-item">
-            <a href="#" onclick="toggleChatBox(); return false;">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Help Center | Digital Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+  </head>
+  <body class="dashboard-body">
+    <!-- Sidebar Navigation -->
+    <aside class="dashboard-sidebar">
+      <div class="dashboard-sidebar-logo">
+        <i class="fas fa-wallet"></i>
+        <span>Wallet</span>
+      </div>
+      <ul class="dashboard-sidebar-links">
+        <li class="dashboard-sidebar-item">
+          <a href="dashboard.html">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="transfer.html">
+            <i class="fas fa-exchange-alt"></i>
+            <span>Transfer</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="transactions.html">
+            <i class="fas fa-receipt"></i>
+            <span>Transactions</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="assets.html">
+            <i class="fas fa-chart-pie"></i>
+            <span>Assets</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="exchange.html">
+            <i class="fas fa-sync-alt"></i>
+            <span>Exchange</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="profile.html">
+            <i class="fas fa-user"></i>
+            <span>Account</span>
+          </a>
+        </li>
+
+        <li class="dashboard-sidebar-item active">
+          <a href="help_center.html">
+            <i class="fas fa-question-circle"></i>
+            <span>Help Center</span>
+          </a>
+        </li>
+        <li class="dashboard-sidebar-item">
+          <a href="#" onclick="toggleChatBox(); return false;">
             <i class="fas fa-comments"></i>
-          <span>Live Chat</span>
-        </a>
-      </li>
-     
-      <li class="dashboard-sidebar-item">
-        <a href="#" onclick="logout(); return false;">
-          <i class="fas fa-sign-out-alt"></i>
-          <span>Logout</span>
-        </a>
-      </li>
-    </ul>
-  </aside>
-       <!-- Live Chat Box -->
+            <span>Live Chat</span>
+          </a>
+        </li>
+
+        <li class="dashboard-sidebar-item">
+          <a href="#" onclick="logout(); return false;">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
     <div id="chat-box">
-       <div id="chat-header">
-         AI Support
-      <span id="close-chat" onclick="toggleChatBox()">✖</span>
-     </div>
-    <div id="chat-messages"></div>
-        <input type="text" id="chat-input" placeholder="Ask a question..." onkeydown="handleKey(event)">
+      <div id="chat-header">
+        AI Support
+        <button id="chat-refresh" title="Refresh">↻</button>
+        <span id="close-chat" title="Close" onclick="toggleChatBox()">✖</span>
+      </div>
+
+      <div id="chat-messages"></div>
+
+      <div class="chat-input-row">
+        <input
+          type="text"
+          id="chat-input"
+          placeholder="Ask a question..."
+          onkeydown="handleKey(event)"
+          autocomplete="off"
+        />
+        <button id="chat-send" title="Send">➤</button>
+      </div>
     </div>
-  <!-- Main Content: Help Center -->
-  <main class="dashboard-main">
-    <!-- Help Section: Transactions -->
-    <section class="help-section">
-      <h2>Transactions</h2>
-      <h3>Deposits</h3>
-      <p>To deposit funds, go to the deposit page, enter the amount, and confirm the transaction. Your wallet balance will be updated once the deposit is successful.</p>
-      <h3>Withdrawals</h3>
-      <p>To withdraw funds, visit the withdrawal page, enter the amount, and confirm. Withdrawals are subject to daily, weekly, and monthly limits depending on your tier.</p>
-      <h3>Transfers</h3>
-      <p>You can transfer funds to another user by providing the recipient's email and the amount. The system processes your transfer based on your available balance and tier limits.</p>
-    </section>
+    <!-- Main Content: Help Center -->
+    <main class="dashboard-main">
+      <!-- Help Section: Transactions -->
+      <section class="help-section">
+        <h2>Transactions</h2>
+        <h3>Deposits</h3>
+        <p>
+          To deposit funds, go to the deposit page, enter the amount, and
+          confirm the transaction. Your wallet balance will be updated once the
+          deposit is successful.
+        </p>
+        <h3>Withdrawals</h3>
+        <p>
+          To withdraw funds, visit the withdrawal page, enter the amount, and
+          confirm. Withdrawals are subject to daily, weekly, and monthly limits
+          depending on your tier.
+        </p>
+        <h3>Transfers</h3>
+        <p>
+          You can transfer funds to another user by providing the recipient's
+          email and the amount. The system processes your transfer based on your
+          available balance and tier limits.
+        </p>
+      </section>
 
-    <!-- Help Section: FAQs -->
-    <section class="help-section">
-      <h2>FAQs</h2>
-      <div class="faq-item">
-        <h3>Q: What are the transaction limits?</h3>
-        <div class="limits-tier">
-          <p>A: Once you reach a limit for the current period (daily, weekly, or monthly), you must wait until it resets to continue transacting. If you have any questions about raising your limits, contact support.</p>
-          <h4>Regular Tier</h4>
-          <ul>
-            <li>Daily Limit: 500 USDT</li>
-            <li>Weekly Limit: 2,000 USDT</li>
-            <li>Monthly Limit: 5,000 USDT</li>
-          </ul>
+      <!-- Help Section: FAQs -->
+      <section class="help-section">
+        <h2>FAQs</h2>
+        <div class="faq-item">
+          <h3>Q: What are the transaction limits?</h3>
+          <div class="limits-tier">
+            <p>
+              A: Once you reach a limit for the current period (daily, weekly,
+              or monthly), you must wait until it resets to continue
+              transacting. If you have any questions about raising your limits,
+              contact support.
+            </p>
+            <h4>Regular Tier</h4>
+            <ul>
+              <li>Daily Limit: 500 USDT</li>
+              <li>Weekly Limit: 2,000 USDT</li>
+              <li>Monthly Limit: 5,000 USDT</li>
+            </ul>
+          </div>
+          <div class="limits-tier">
+            <h4>VIP Tier</h4>
+            <ul>
+              <li>Daily Limit: 1,000 USDT</li>
+              <li>Weekly Limit: 5,000 USDT</li>
+              <li>Monthly Limit: 10,000 USDT</li>
+            </ul>
+          </div>
         </div>
-        <div class="limits-tier">
-          <h4>VIP Tier</h4>
-          <ul>
-            <li>Daily Limit: 1,000 USDT</li>
-            <li>Weekly Limit: 5,000 USDT</li>
-            <li>Monthly Limit: 10,000 USDT</li>
-          </ul>
+        <div class="faq-item">
+          <h3>Q: How do I reset my password?</h3>
+          <p>
+            A: Click on "Forgot Password?" on the login page, enter your email,
+            and follow the instructions sent via email. You'll be able to create
+            a new password.
+          </p>
         </div>
-      </div>
-      <div class="faq-item">
-        <h3>Q: How do I reset my password?</h3>
-        <p>A: Click on "Forgot Password?" on the login page, enter your email, and follow the instructions sent via email. You'll be able to create a new password.</p>
-      </div>
-    </section>
-  </main>
-  <script src="js/live_chat.js"></script>
-  <script src="js/logout.js"></script>
-
-</body>
+      </section>
+    </main>
+    <script src="js/live_chat.js"></script>
+    <script src="js/logout.js"></script>
+  </body>
 </html>

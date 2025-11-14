@@ -182,19 +182,25 @@
       </ul>
     </aside>
 
-    <!-- Live Chat Box -->
     <div id="chat-box">
       <div id="chat-header">
         AI Support
-        <span id="close-chat" onclick="toggleChatBox()">✖</span>
+        <button id="chat-refresh" title="Refresh">↻</button>
+        <span id="close-chat" title="Close" onclick="toggleChatBox()">✖</span>
       </div>
+
       <div id="chat-messages"></div>
-      <input
-        type="text"
-        id="chat-input"
-        placeholder="Ask a question..."
-        onkeydown="handleKey(event)"
-      />
+
+      <div class="chat-input-row">
+        <input
+          type="text"
+          id="chat-input"
+          placeholder="Ask a question..."
+          onkeydown="handleKey(event)"
+          autocomplete="off"
+        />
+        <button id="chat-send" title="Send">➤</button>
+      </div>
     </div>
 
     <!-- Main Content Area -->
