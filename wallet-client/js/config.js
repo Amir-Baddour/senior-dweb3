@@ -16,8 +16,8 @@
       "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
   } else {
     // Production - Using NEW Cloudflare Tunnel
-    API_BASE_URL =
-      "https://templates-bridge-michelle-ranked.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
+        API_BASE_URL = "https://aqua-pct-overview-particle.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
+
   }
 
   // Make config globally available
