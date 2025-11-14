@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function () {
           if (btnElem) {
             btnElem.style.display = "inline-block";
             btnElem.textContent = "Verify Now";
-            btnElem.onclick = () => window.location.href = "./verification.html";
+            btnElem.onclick = () => window.location.href = "verification.html";
           }
         }
       })
