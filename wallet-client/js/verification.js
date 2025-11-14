@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(response => {
             if (response.data.status === "success") {
-                window.location.href = "/digital-wallet-platform/wallet-client/dashboard.html";
+                window.location.href = "/dashboard.html";
             }
         })
         .catch(error => {
