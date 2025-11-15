@@ -1,14 +1,20 @@
+// Admin config.js - API Configuration
 (function () {
+  "use strict";
+
+  // Detect environment
   const isLocal =
     location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+  const basePath = "/digital-wallet-plateform/wallet-server/admin/v1";
+
+  // ✅ Auto-detect: Always use current origin (works with any tunnel URL)
+  const API_BASE_URL = isLocal 
+    ? `http://localhost${basePath}`
+    : `${location.origin}${basePath}`;
+
+  // Make config globally available
+  window.ADMIN_CONFIG = { API_BASE_URL };
   
-  const LOCAL_API =
-    "http://localhost/digital-wallet-plateform/wallet-server/admin/v1";
-
-  // ✅ Cloudflare Tunnel URL for admin endpoints
-  const PROD_API =
-    "https://boxed-reserve-relief-desktop.trycloudflare.com/digital-wallet-plateform/wallet-server/admin/v1";
-
-  window.ADMIN_CONFIG = { API_BASE_URL: isLocal ? LOCAL_API : PROD_API };
-  console.log("[admin-config] API_BASE_URL =", window.ADMIN_CONFIG.API_BASE_URL);
+  console.log("[admin-config] API_BASE_URL =", API_BASE_URL);
 })();
