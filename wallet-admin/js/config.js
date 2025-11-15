@@ -16,8 +16,8 @@
     // Local development
     API_BASE_URL = `http://localhost${basePath}`;
   } else if (isVercel) {
-    // ✅ When on Vercel (adminpanel-two-rose), point to Cloudflare tunnel backend
-    API_BASE_URL = `https://remote-webster-been-fathers.trycloudflare.com${basePath}`;
+    // ✅ UPDATE THIS LINE - New tunnel URL
+    API_BASE_URL = `https://vary-declared-lands-cos.trycloudflare.com${basePath}`;
   } else if (isCloudflare) {
     // ✅ When on Cloudflare tunnel, use same origin
     API_BASE_URL = `${location.origin}${basePath}`;
