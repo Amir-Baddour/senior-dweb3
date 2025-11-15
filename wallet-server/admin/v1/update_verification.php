@@ -1,16 +1,16 @@
 <?php
 // ✅ Use cors.php instead of hardcoded headers
-error_log("[verification_requests.php] File loaded at " . date('Y-m-d H:i:s'));
+error_log("[update_verification.php] File loaded at " . date('Y-m-d H:i:s'));
 
 require_once __DIR__ . '/../../utils/cors.php';
-error_log("[verification_requests.php] CORS file included");
+error_log("[update_verification.php] CORS file included");
 
 // --- Include Dependencies ---
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/MailService.php';
-require_once __DIR__ . '/../../utils/verify_jwt.php';
+require_once __DIR__ . '/../../utils/jwt.php'; // ✅ FIX: Use same jwt.php as login.php
 
 $response = ["status" => "error", "message" => "Something went wrong"];
 
@@ -34,8 +34,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     
     $jwt = $parts[1];
-    $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Must match login.php
-    $decoded = verify_jwt($jwt, $jwt_secret);
+    
+    // ✅ FIX: Use jwt_verify from jwt.php instead of verify_jwt
+    $decoded = jwt_verify($jwt);
     
     if (!$decoded) {
         $response["message"] = "Invalid or expired token.";

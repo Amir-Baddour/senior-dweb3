@@ -4,11 +4,12 @@ error_log("[verification_requests.php] File loaded at " . date('Y-m-d H:i:s'));
 
 require_once __DIR__ . '/../../utils/cors.php';
 error_log("[verification_requests.php] CORS file included");
+
 // --- Include Dependencies ---
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
-require_once __DIR__ . '/../../utils/verify_jwt.php';
+require_once __DIR__ . '/../../utils/jwt.php'; // ✅ FIX: Use same jwt.php as login.php
 
 // --- JWT Authentication ---
 // Retrieve and verify the JWT from the Authorization header.
@@ -27,8 +28,9 @@ if (count($parts) !== 2 || $parts[0] !== 'Bearer') {
 }
 
 $jwt = $parts[1];
-$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Must match login.php
-$decoded = verify_jwt($jwt, $jwt_secret);
+
+// ✅ FIX: Use jwt_verify from jwt.php instead of verify_jwt
+$decoded = jwt_verify($jwt);
 
 if (!$decoded) {
     echo json_encode(["status" => "error", "message" => "Invalid or expired token."]);
