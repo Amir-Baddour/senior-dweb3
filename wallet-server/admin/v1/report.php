@@ -1,4 +1,129 @@
 <?php
+// ✅ MUST BE FIRST - Include CORS headers
+require_once __DIR__ . '/../../utils/cors.php';
+
+// Start output buffering
+ob_start();
+
+// Error handling
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL);
+
+// Include dependencies
+require_once __DIR__ . '/../../connection/db.php';
+require_once __DIR__ . '/../../utils/jwt.php';
+
+// --- JWT Authentication ---
+$headers = getallheaders();
+if (!isset($headers['Authorization'])) {
+    http_response_code(401);
+    echo json_encode(["error" => "No authorization header"]);
+    exit;
+}
+
+$auth_parts = explode(' ', $headers['Authorization']);
+if (count($auth_parts) !== 2 || $auth_parts[0] !== 'Bearer') {
+    http_response_code(401);
+    echo json_encode(["error" => "Invalid token format"]);
+    exit;
+}
+
+$jwt = $auth_parts[1];
+$decoded = jwt_verify($jwt);
+
+if (!$decoded) {
+    http_response_code(401);
+    echo json_encode(["error" => "Invalid or expired token"]);
+    exit;
+}
+
+// Check if admin
+if (!isset($decoded['role']) || (string)$decoded['role'] !== '1') {
+    http_response_code(403);
+    echo json_encode(["error" => "Access denied. Admins only."]);
+    exit;
+}
+
+// --- Get Parameters ---
+$report = $_GET['report'] ?? 'transactions';
+$from = $_GET['from'] ?? null;
+$to = $_GET['to'] ?? null;
+$format = $_GET['format'] ?? 'csv';
+
+if (!$from || !$to) {
+    $to = (new DateTime('today'))->format('Y-m-d');
+    $from = (new DateTime('today -30 days'))->format('Y-m-d');
+}
+
+// --- Fetch Data ---
+try {
+    $rows = [];
+    
+    if ($report === 'transactions') {
+        $stmt = $conn->prepare("
+            SELECT 
+                t.id,
+                t.sender_id,
+                t.receiver_id,
+                t.amount,
+                t.transaction_type,
+                t.created_at
+            FROM transactions t
+            WHERE DATE(t.created_at) BETWEEN :from AND :to
+            ORDER BY t.created_at DESC
+        ");
+        $stmt->execute([':from' => $from, ':to' => $to]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+    } elseif ($report === 'users') {
+        $stmt = $conn->prepare("
+            SELECT 
+                u.id,
+                u.email,
+                u.role,
+                DATE(u.created_at) as registration_date
+            FROM users u
+            WHERE DATE(u.created_at) BETWEEN :from AND :to
+            ORDER BY u.created_at DESC
+        ");
+        $stmt->execute([':from' => $from, ':to' => $to]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(["error" => "Database error: " . $e->getMessage()]);
+    exit;
+}
+
+// --- Format Response ---
+if ($format === 'csv') {
+    // Clean output buffer
+    while (ob_get_level() > 0) { ob_end_clean(); }
+    
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $report . '_' . $from . '_' . $to . '.csv"');
+    header('Cache-Control: no-cache, must-revalidate');
+    
+    $output = fopen('php://output', 'w');
+    
+    if (!empty($rows)) {
+        // Write headers
+        fputcsv($output, array_keys($rows[0]));
+        
+        // Write data
+        foreach ($rows as $row) {
+            fputcsv($output, $row);
+        }
+    } else {
+        fputcsv($output, ['No data found']);
+    }
+    
+    fclose($output);
+    exit;
+}
+
 // ---- PDF ----
 if ($format === 'pdf') {
     $candidates = [
@@ -52,17 +177,22 @@ if ($format === 'pdf') {
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
 
-    // ✅ Clean all output buffers so no stray data corrupts the PDF
+    // ✅ Clean all output buffers
     while (ob_get_level() > 0) { ob_end_clean(); }
 
-    // ✅ Send headers explicitly
+    // ✅ Send headers
     $filename = "{$report}_{$from}_{$to}.pdf";
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="'.$filename.'"');
     header('Cache-Control: private, max-age=0, must-revalidate');
     header('Pragma: public');
 
-    // ✅ Echo only the PDF bytes
+    // ✅ Output PDF
     echo $dompdf->output();
     exit;
 }
+
+// Unknown format
+http_response_code(400);
+echo json_encode(["error" => "Unsupported format: $format"]);
+?>
