@@ -1,29 +1,31 @@
-// config.js - API Configuration
+// User config.js - API Configuration
 (function () {
   "use strict";
 
-  // Detect environment
   const isLocal =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1";
+    location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  
+  const isVercel = location.hostname.includes("vercel.app");
+  const isCloudflare = location.hostname.includes("trycloudflare.com");
 
-  // Set API base URL based on environment
+  const basePath = "/digital-wallet-plateform/wallet-server/user/v1";
+
   let API_BASE_URL;
 
   if (isLocal) {
     // Local development
-    API_BASE_URL =
-      "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
+    API_BASE_URL = `http://localhost${basePath}`;
+  } else if (isVercel) {
+    // ✅ When on Vercel (yourwallet0), point to Cloudflare tunnel backend
+    API_BASE_URL = `https://remote-webster-been-fathers.trycloudflare.com${basePath}`;
+  } else if (isCloudflare) {
+    // ✅ When on Cloudflare tunnel, use same origin
+    API_BASE_URL = `${location.origin}${basePath}`;
   } else {
-    // Production - Using NEW Cloudflare Tunnel
-        API_BASE_URL = "https://aqua-pct-overview-particle.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
-
+    // Fallback
+    API_BASE_URL = `${location.origin}${basePath}`;
   }
 
-  // Make config globally available
-  window.APP_CONFIG = {
-    API_BASE_URL: API_BASE_URL,
-  };
-
+  window.APP_CONFIG = { API_BASE_URL };
   console.log("[config] API_BASE_URL =", API_BASE_URL);
 })();

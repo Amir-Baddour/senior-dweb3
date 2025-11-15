@@ -2,6 +2,7 @@
 if (!headers_sent()) {
   $allowed_origins = [
     'https://yourwallet0.vercel.app',
+    'https://adminpanel-two-rose.vercel.app', 
     'http://localhost',
     'http://127.0.0.1'
   ];
