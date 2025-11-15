@@ -1,6 +1,9 @@
 <?php
 // ✅ Use cors.php instead of hardcoded headers
+error_log("[verification_requests.php] File loaded at " . date('Y-m-d H:i:s'));
+
 require_once __DIR__ . '/../../../utils/cors.php';
+error_log("[verification_requests.php] CORS file included");
 
 // --- Include Dependencies ---
 require_once __DIR__ . '/../../connection/db.php';
