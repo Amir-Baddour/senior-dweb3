@@ -1,20 +1,12 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Content-Type: application/json; charset=UTF-8");
-
-// --- Handle Preflight Request ---
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
+// ✅ Use cors.php instead of hardcoded headers
+require_once __DIR__ . '/../../../utils/cors.php';
 
 // --- Include Dependencies ---
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
-require_once __DIR__ . '/../../utils/verify_jwt.php'; // Adjust path if needed
+require_once __DIR__ . '/../../utils/verify_jwt.php';
 
 // --- JWT Authentication ---
 // Retrieve and verify the JWT from the Authorization header.
@@ -23,21 +15,27 @@ if (!isset($headers['Authorization'])) {
     echo json_encode(["status" => "error", "message" => "No authorization header provided."]);
     exit;
 }
-list($bearer, $jwt) = explode(' ', $headers['Authorization']);
-if ($bearer !== 'Bearer' || !$jwt) {
+
+$auth_header = $headers['Authorization'];
+$parts = explode(' ', $auth_header);
+
+if (count($parts) !== 2 || $parts[0] !== 'Bearer') {
     echo json_encode(["status" => "error", "message" => "Invalid token format."]);
     exit;
 }
-$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Replace with your secure secret
+
+$jwt = $parts[1];
+$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Must match login.php
 $decoded = verify_jwt($jwt, $jwt_secret);
+
 if (!$decoded) {
     echo json_encode(["status" => "error", "message" => "Invalid or expired token."]);
     exit;
 }
 
 // --- Authorization Check ---
-// Ensure the token belongs to an admin (role = 1).
-if (!isset($decoded['role']) || $decoded['role'] != 1) {
+// ✅ Use string comparison since JWT stores role as string
+if (!isset($decoded['role']) || (string)$decoded['role'] !== '1') {
     echo json_encode(["status" => "error", "message" => "Access denied. Admins only."]);
     exit;
 }
@@ -66,6 +64,8 @@ try {
     $response = ["status" => "success", "data" => $requests];
 } catch (PDOException $e) {
     $response["message"] = "Database error: " . $e->getMessage();
+} catch (Exception $e) {
+    $response["message"] = "Error: " . $e->getMessage();
 }
 
 echo json_encode($response);
