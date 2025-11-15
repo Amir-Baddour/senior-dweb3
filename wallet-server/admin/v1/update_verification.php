@@ -1,21 +1,13 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Content-Type: application/json; charset=UTF-8");
-
-// --- Handle Preflight Request ---
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
+// ✅ Use cors.php instead of hardcoded headers
+require_once __DIR__ . '/../../../utils/cors.php';
 
 // --- Include Dependencies ---
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/MailService.php';
-require_once __DIR__ . '/../../utils/verify_jwt.php'; // Adjust path if needed
+require_once __DIR__ . '/../../utils/verify_jwt.php';
 
 $response = ["status" => "error", "message" => "Something went wrong"];
 
@@ -28,14 +20,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo json_encode($response);
         exit;
     }
-    list($bearer, $jwt) = explode(' ', $headers['Authorization']);
-    if ($bearer !== 'Bearer' || !$jwt) {
+    
+    $auth_header = $headers['Authorization'];
+    $parts = explode(' ', $auth_header);
+    
+    if (count($parts) !== 2 || $parts[0] !== 'Bearer') {
         $response["message"] = "Invalid token format.";
         echo json_encode($response);
         exit;
     }
-    $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Replace with your secure secret
+    
+    $jwt = $parts[1];
+    $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Must match login.php
     $decoded = verify_jwt($jwt, $jwt_secret);
+    
     if (!$decoded) {
         $response["message"] = "Invalid or expired token.";
         echo json_encode($response);
@@ -43,7 +41,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     
     // --- Admin Authorization Check ---
-    if (!isset($decoded['role']) || $decoded['role'] != 1) {
+    // ✅ Use string comparison since JWT stores role as string
+    if (!isset($decoded['role']) || (string)$decoded['role'] !== '1') {
         $response["message"] = "Access denied. Admins only.";
         echo json_encode($response);
         exit;
@@ -56,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $is_validated = $data["is_validated"] ?? null;
     
     // Validate required parameters: user_id must be present and is_validated must be either 1 (approved) or -1 (rejected)
-    if (!$user_id || !in_array($is_validated, [1, -1])) {
+    if (!$user_id || !in_array($is_validated, [1, -1], true)) {
         $response["message"] = "Invalid request parameters.";
         echo json_encode($response);
         exit;
@@ -95,8 +94,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $userEmail = $user ? $user['email'] : null;
     
                 if ($userEmail) {
-                    // Generate a QR link for receiving a payment bonus
-                    $qrLink = "http://localhost/digital-wallet-platform/wallet-server/utils/generate_qr.php?recipient_id={$user_id}&amount=10";
+                    // ✅ Use dynamic URL based on environment
+                    // Determine the base URL
+                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                    
+                    // Build the QR link dynamically
+                    $qrLink = "{$protocol}://{$host}/digital-wallet-plateform/wallet-server/utils/generate_qr.php?recipient_id={$user_id}&amount=10";
     
                     $mailer = new MailService();
                     $subject = "Welcome to Our Platform!";
@@ -116,6 +120,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
     } catch (PDOException $e) {
         $response["message"] = "Database error: " . $e->getMessage();
+    } catch (Exception $e) {
+        $response["message"] = "Error: " . $e->getMessage();
     }
 }
 
