@@ -1,7 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // ✅ Use config with fallback
+    const API_BASE_URL = window.ADMIN_CONFIG?.API_BASE_URL || 
+        "http://localhost/digital-wallet-plateform/wallet-server/admin/v1";
+    
+    console.log('[verification-requests] Using API_BASE_URL:', API_BASE_URL);
+
     // Retrieve the admin JWT from localStorage; if missing, redirect to login.
     const token = localStorage.getItem("admin_jwt");
     if (!token) {
+        console.warn('[verification-requests] No admin_jwt found, redirecting to login');
         window.location.href = "login.html";
         return;
     }
@@ -18,30 +25,59 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Fetch pending verification requests and update the table.
     function fetchRequests() {
-        axios.get("http://localhost/digital-wallet-plateform/wallet-server/admin/v1/verification_requests.php", axiosConfig)
+        console.log('[verification-requests] Fetching requests from:', `${API_BASE_URL}/verification_requests.php`);
+        
+        axios.get(`${API_BASE_URL}/verification_requests.php`, axiosConfig)
             .then(response => {
+                console.log('[verification-requests] Response:', response.data);
+                
                 if (response.data.status === "success") {
                     tableBody.innerHTML = ""; // Clear existing rows
-                    response.data.data.forEach(request => {
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${request.email}</td>
-                            <td><a href="/digital-wallet-platform/wallet-server/uploads/${request.id_document}" target="_blank">View ID</a></td>
-                            <td>
-                                <button class="approve-btn" data-user-id="${request.user_id}">Approve</button>
-                                <button class="reject-btn" data-user-id="${request.user_id}">Reject</button>
-                            </td>
-                        `;
-                        tableBody.appendChild(row);
-                    });
-                    addActionListeners();
+                    
+                    if (response.data.data && response.data.data.length > 0) {
+                        response.data.data.forEach(request => {
+                            const row = document.createElement("tr");
+                            
+                            // ✅ Build proper document URL
+                            // Use API_BASE_URL to construct the uploads path
+                            const uploadsPath = API_BASE_URL.replace('/admin/v1', '/uploads');
+                            const documentUrl = `${uploadsPath}/${request.id_document}`;
+                            
+                            row.innerHTML = `
+                                <td>${request.email || 'N/A'}</td>
+                                <td><a href="${documentUrl}" target="_blank" rel="noopener noreferrer">View ID</a></td>
+                                <td>
+                                    <button class="approve-btn" data-user-id="${request.user_id}">Approve</button>
+                                    <button class="reject-btn" data-user-id="${request.user_id}">Reject</button>
+                                </td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                        addActionListeners();
+                        console.log('[verification-requests] Loaded', response.data.data.length, 'requests');
+                    } else {
+                        tableBody.innerHTML = `<tr><td colspan="3">No pending requests found.</td></tr>`;
+                        console.log('[verification-requests] No pending requests');
+                    }
                 } else {
                     tableBody.innerHTML = `<tr><td colspan="3">No pending requests found.</td></tr>`;
+                    console.warn('[verification-requests] Response status not success:', response.data);
                 }
             })
             .catch(error => {
-                console.error("Error fetching verification requests:", error);
-                tableBody.innerHTML = `<tr><td colspan="3">Failed to load requests.</td></tr>`;
+                console.error("[verification-requests] Error fetching requests:", error);
+                
+                let errorMsg = "Failed to load requests.";
+                if (error.response) {
+                    errorMsg += ` Server error: ${error.response.status}`;
+                    console.error('[verification-requests] Server response:', error.response.data);
+                } else if (error.request) {
+                    errorMsg += " No response from server.";
+                } else {
+                    errorMsg += ` ${error.message}`;
+                }
+                
+                tableBody.innerHTML = `<tr><td colspan="3">${errorMsg}</td></tr>`;
             });
     }
 
@@ -49,12 +85,17 @@ document.addEventListener("DOMContentLoaded", function () {
     function addActionListeners() {
         document.querySelectorAll(".approve-btn").forEach(button => {
             button.addEventListener("click", function () {
-                updateVerificationStatus(this.dataset.userId, 1);
+                const userId = this.dataset.userId;
+                console.log('[verification-requests] Approving user:', userId);
+                updateVerificationStatus(userId, 1);
             });
         });
+        
         document.querySelectorAll(".reject-btn").forEach(button => {
             button.addEventListener("click", function () {
-                updateVerificationStatus(this.dataset.userId, -1);
+                const userId = this.dataset.userId;
+                console.log('[verification-requests] Rejecting user:', userId);
+                updateVerificationStatus(userId, -1);
             });
         });
     }
@@ -62,11 +103,16 @@ document.addEventListener("DOMContentLoaded", function () {
     // Update verification status and refresh the requests table.
     function updateVerificationStatus(user_id, is_validated) {
         if (!user_id) {
-            console.error("User ID missing.");
+            console.error("[verification-requests] User ID missing.");
+            alert("Error: User ID is missing.");
             return;
         }
+        
+        const action = is_validated === 1 ? "approve" : "reject";
+        console.log(`[verification-requests] ${action}ing user ${user_id}...`);
+        
         axios.post(
-            "http://localhost/digital-wallet-plateform/wallet-server/admin/v1/update_verification.php", 
+            `${API_BASE_URL}/update_verification.php`, 
             {
                 user_id: user_id,
                 is_validated: is_validated
@@ -79,16 +125,40 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         )
         .then(response => {
+            console.log('[verification-requests] Update response:', response.data);
+            
             const data = response.data;
-            console.log(data.message || "Unexpected response from server.");
+            const message = data.message || "Verification status updated.";
+            
+            if (data.status === "success") {
+                alert(`✅ ${message}`);
+                console.log(`[verification-requests] Successfully ${action}ed user ${user_id}`);
+            } else {
+                alert(`⚠️ ${message}`);
+                console.warn('[verification-requests] Update failed:', data);
+            }
+            
             // Refresh the table after the update.
             fetchRequests();
         })
         .catch(error => {
-            console.error("Error updating verification status:", error);
+            console.error("[verification-requests] Error updating verification status:", error);
+            
+            let errorMsg = "Failed to update verification status.";
+            if (error.response) {
+                errorMsg = error.response.data?.message || `Server error: ${error.response.status}`;
+                console.error('[verification-requests] Server response:', error.response.data);
+            } else if (error.request) {
+                errorMsg = "No response from server. Check your connection.";
+            } else {
+                errorMsg = error.message;
+            }
+            
+            alert(`❌ ${errorMsg}`);
         });
     }
 
     // Initial load of verification requests.
+    console.log('[verification-requests] Initializing...');
     fetchRequests();
 });
