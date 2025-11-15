@@ -1,14 +1,5 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/login.html" }
-  ],
-  "routes": [
-    {
-      "src": "/wallet-admin/(.*)",
-      "methods": ["GET"],
-      "dest": "/wallet-admin/$1"
-    }
-  ],
-  "buildCommand": "",
-  "installCommand": ""
+  ]
 }
