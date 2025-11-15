@@ -2,7 +2,7 @@
 if (!headers_sent()) {
   $allowed_origins = [
     'https://yourwallet0.vercel.app',
-    'https://admin-sand-eight-43.vercel.app/', 
+    'https://admin-sand-eight-43.vercel.app', // ✅ REMOVED trailing slash
     'http://localhost',
     'http://127.0.0.1'
   ];
@@ -15,6 +15,9 @@ if (!headers_sent()) {
   if (in_array($origin, $allowed_origins, true) || $is_cloudflare_tunnel) {
     header("Access-Control-Allow-Origin: $origin");
     header("Vary: Origin");
+  } else {
+    // ✅ Fallback for debugging - log unmatched origins
+    error_log("[CORS] Origin not allowed: " . $origin);
   }
 
   header("Access-Control-Allow-Credentials: true");
