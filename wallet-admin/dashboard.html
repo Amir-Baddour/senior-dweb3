@@ -10,274 +10,120 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
-    <script src="js/config.js"></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"
-      defer
-    ></script>
+    <script src="js/config.js?v=15"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-
-    <script src="js/logout.js" defer></script>
+    <script src="js/logout.js?v=1.0" defer></script>
     <script src="js/analytics.js" defer></script>
     <script src="js/reports.js" defer></script>
-
-    <!-- Compact helpers -->
-    <style>
-      :root {
-        --card-pad: 12px;
-        --grid-gap: 10px;
-        --chart-h: 150px; /* <<< change this number if you want even smaller/larger charts */
-        --title-mb: 6px;
-      }
-      .analytics-container {
-        width: 100%;
-        max-width: 1100px;
-        margin: 0 auto;
-      }
-      .dashboard-page {
-        justify-content: flex-start;
-      }
-      .dashboard-header {
-        width: 100%;
-        max-width: 1100px;
-        margin: 10px auto;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .dashboard-title {
-        font-size: 1.4rem;
-      }
-      .a-card {
-        width: 100%;
-        background: #fff;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        padding: var(--card-pad);
-        margin-bottom: var(--grid-gap);
-      }
-      .a-grid-2 {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--grid-gap);
-      }
-      .a-row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .a-col {
-        flex: 1;
-        min-width: 160px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .a-actions {
-        align-self: end;
-        display: flex;
-        gap: 8px;
-      }
-      .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: var(--grid-gap);
-        margin: 8px 0;
-      }
-      .kpi-card {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        color: #fff;
-        border-radius: 10px;
-        padding: 12px;
-      }
-      .kpi-title {
-        opacity: 0.95;
-        font-weight: 600;
-        font-size: 0.9rem;
-      }
-      .kpi-value {
-        font-size: 1.2rem;
-        font-weight: 700;
-      }
-      .section-title {
-        margin-bottom: var(--title-mb);
-        font-size: 1rem;
-      }
-      /* Hard-limit chart height via wrapper to stop Canvas auto-expanding */
-      .chart-wrap {
-        width: 100%;
-        height: var(--chart-h);
-        position: relative;
-      }
-      .chart-wrap canvas {
-        position: absolute;
-        inset: 0;
-      }
-      input[type="date"],
-      select {
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 8px;
-        background: #f9fafb;
-        font-size: 0.9rem;
-      }
-      .btn-outline {
-        display: inline-block;
-        padding: 8px 14px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #1e293b;
-        background: #fff;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        cursor: pointer;
-      }
-      .btn-outline:hover {
-        background: #f3f4f6;
-      }
-      @media (max-width: 980px) {
-        .kpi-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-        .dashboard-title {
-          font-size: 1.2rem;
-        }
-      }
-    </style>
   </head>
 
-  <body>
-    <div class="dashboard-page">
-      <header class="dashboard-header" aria-label="Admin header">
-        <h1 class="dashboard-title">Dashboard</h1>
-        <nav class="dashboard-btn-group" aria-label="Primary actions">
-          <a class="btn" href="verification_requests.html"
-            >Verification Requests</a
-          >
-          <a class="reject-btn" href="#" onclick="logout(); return false;"
-            >Logout</a
-          >
-        </nav>
-      </header>
+  <body class="dashboard-page">
+    <header class="dashboard-header" aria-label="Admin header">
+      <h1 class="dashboard-title">Dashboard</h1>
+      <nav class="dashboard-btn-group" aria-label="Primary actions">
+        <a class="btn" href="verification_requests.html">Verification Requests</a>
+        <a class="reject-btn" href="#" onclick="logout(); return false;">Logout</a>
+      </nav>
+    </header>
 
-      <main class="analytics-container">
-        <!-- Filters -->
-        <section class="a-card" aria-labelledby="filters-title">
-          <h2 id="filters-title" class="section-title">Filters</h2>
-          <div class="a-row">
-            <div class="a-col">
-              <label for="fromDate">From</label>
-              <input id="fromDate" type="date" />
-            </div>
-            <div class="a-col">
-              <label for="toDate">To</label>
-              <input id="toDate" type="date" />
-            </div>
-            <div class="a-actions" role="group" aria-label="Filter actions">
-              <button id="applyFilters" class="btn" type="button">Apply</button>
-              <button id="resetFilters" class="btn-outline" type="button">
-                Reset
-              </button>
-            </div>
+    <main class="analytics-container">
+      <!-- Filters -->
+      <section class="a-card" aria-labelledby="filters-title">
+        <h2 id="filters-title" class="section-title">Filters</h2>
+        <div class="a-row">
+          <div class="a-col">
+            <label for="fromDate">From</label>
+            <input id="fromDate" type="date" />
           </div>
-        </section>
-
-        <!-- KPIs -->
-        <section class="kpi-grid" aria-label="Key performance indicators">
-          <article class="kpi-card" aria-live="polite">
-            <div class="kpi-title">Total Users</div>
-            <div id="kpiTotalUsers" class="kpi-value">—</div>
-          </article>
-          <article class="kpi-card" aria-live="polite">
-            <div class="kpi-title">New Users (7d)</div>
-            <div id="kpiNewUsers7d" class="kpi-value">—</div>
-          </article>
-          <article class="kpi-card" aria-live="polite">
-            <div class="kpi-title">Tx Volume (range)</div>
-            <div id="kpiTxVolume" class="kpi-value">—</div>
-          </article>
-          <article class="kpi-card" aria-live="polite">
-            <div class="kpi-title">Tx Count (range)</div>
-            <div id="kpiTxCount" class="kpi-value">—</div>
-          </article>
-        </section>
-
-        <!-- Charts row 1 -->
-        <section class="a-grid-2" aria-label="Analytics charts row 1">
-          <article class="a-card">
-            <h2 class="section-title">User Growth (Daily)</h2>
-            <div class="chart-wrap">
-              <canvas
-                id="userGrowthChart"
-                aria-label="New users per day"
-              ></canvas>
-            </div>
-          </article>
-          <article class="a-card">
-            <h2 class="section-title">Transaction Volume (Daily)</h2>
-            <div class="chart-wrap">
-              <canvas
-                id="txVolumeChart"
-                aria-label="Daily transaction volume"
-              ></canvas>
-            </div>
-          </article>
-        </section>
-
-        <!-- Charts row 2 -->
-        <section class="a-grid-2" aria-label="Analytics charts row 2">
-          <article class="a-card">
-            <h2 class="section-title">Transactions by Type</h2>
-            <div class="chart-wrap">
-              <canvas
-                id="txTypeChart"
-                aria-label="Transactions grouped by type"
-              ></canvas>
-            </div>
-          </article>
-          <article class="a-card">
-            <h2 class="section-title">Top Types (by Volume)</h2>
-            <div class="chart-wrap">
-              <canvas
-                id="topCoinsChart"
-                aria-label="Top transaction types by volume"
-              ></canvas>
-            </div>
-          </article>
-        </section>
-
-        <!-- Reporting -->
-        <section class="a-card" aria-labelledby="reporting-title">
-          <h2 id="reporting-title" class="section-title">Reporting</h2>
-          <div class="a-row">
-            <div class="a-col">
-              <label for="reportType">Report</label>
-              <select id="reportType">
-                <option value="transactions">Transactions (detailed)</option>
-                <option value="users">Users (growth)</option>
-              </select>
-            </div>
-            <div class="a-col">
-              <label for="reportFrom">From</label>
-              <input id="reportFrom" type="date" />
-            </div>
-            <div class="a-col">
-              <label for="reportTo">To</label>
-              <input id="reportTo" type="date" />
-            </div>
-            <div class="a-actions" role="group" aria-label="Export actions">
-              <button id="exportCsv" class="btn" type="button">
-                Export CSV
-              </button>
-              <button id="exportPdf" class="btn-outline" type="button">
-                Export PDF
-              </button>
-            </div>
+          <div class="a-col">
+            <label for="toDate">To</label>
+            <input id="toDate" type="date" />
           </div>
-        </section>
-      </main>
-    </div>
-    <script src="js/logout.js?v=1.0" defer></script>
-    
+          <div class="a-actions" role="group" aria-label="Filter actions">
+            <button id="applyFilters" class="btn" type="button">Apply</button>
+            <button id="resetFilters" class="btn-outline" type="button">Reset</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPIs -->
+      <section class="kpi-grid" aria-label="Key performance indicators">
+        <article class="kpi-card" aria-live="polite">
+          <div class="kpi-title">Total Users</div>
+          <div id="kpiTotalUsers" class="kpi-value">—</div>
+        </article>
+        <article class="kpi-card" aria-live="polite">
+          <div class="kpi-title">New Users (7d)</div>
+          <div id="kpiNewUsers7d" class="kpi-value">—</div>
+        </article>
+        <article class="kpi-card" aria-live="polite">
+          <div class="kpi-title">Tx Volume (range)</div>
+          <div id="kpiTxVolume" class="kpi-value">—</div>
+        </article>
+        <article class="kpi-card" aria-live="polite">
+          <div class="kpi-title">Tx Count (range)</div>
+          <div id="kpiTxCount" class="kpi-value">—</div>
+        </article>
+      </section>
+
+      <!-- Charts row 1 -->
+      <section class="a-grid-2" aria-label="Analytics charts row 1">
+        <article class="a-card">
+          <h2 class="section-title">User Growth (Daily)</h2>
+          <div class="chart-wrap">
+            <canvas id="userGrowthChart" aria-label="New users per day"></canvas>
+          </div>
+        </article>
+        <article class="a-card">
+          <h2 class="section-title">Transaction Volume (Daily)</h2>
+          <div class="chart-wrap">
+            <canvas id="txVolumeChart" aria-label="Daily transaction volume"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <!-- Charts row 2 -->
+      <section class="a-grid-2" aria-label="Analytics charts row 2">
+        <article class="a-card">
+          <h2 class="section-title">Transactions by Type</h2>
+          <div class="chart-wrap">
+            <canvas id="txTypeChart" aria-label="Transactions grouped by type"></canvas>
+          </div>
+        </article>
+        <article class="a-card">
+          <h2 class="section-title">Top Types (by Volume)</h2>
+          <div class="chart-wrap">
+            <canvas id="topCoinsChart" aria-label="Top transaction types by volume"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <!-- Reporting -->
+      <section class="a-card" aria-labelledby="reporting-title">
+        <h2 id="reporting-title" class="section-title">Reporting</h2>
+        <div class="a-row">
+          <div class="a-col">
+            <label for="reportType">Report</label>
+            <select id="reportType">
+              <option value="transactions">Transactions (detailed)</option>
+              <option value="users">Users (growth)</option>
+            </select>
+          </div>
+          <div class="a-col">
+            <label for="reportFrom">From</label>
+            <input id="reportFrom" type="date" />
+          </div>
+          <div class="a-col">
+            <label for="reportTo">To</label>
+            <input id="reportTo" type="date" />
+          </div>
+          <div class="a-actions" role="group" aria-label="Export actions">
+            <button id="exportCsv" class="btn" type="button">Export CSV</button>
+            <button id="exportPdf" class="btn-outline" type="button">Export PDF</button>
+          </div>
+        </div>
+      </section>
+    </main>
   </body>
 </html>
