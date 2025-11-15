@@ -1,4 +1,3 @@
-// Admin config.js - API Configuration
 (function () {
   "use strict";
 
