@@ -3,9 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- ✅ Add COOP headers -->
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+  <meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none">
+  
   <title>Admin Login | Digital Wallet</title>
-  <link rel="stylesheet" href="wallet-admin/css/style.css">
-  <script src="js/config.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- ✅ FIX: Correct path to config.js with cache busting -->
+  <script src="js/config.js?v=12"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body class="login-page">
@@ -23,6 +30,9 @@
         </div>
         <button type="submit" class="btn login-btn">Login</button>
       </form>
+      
+      <!-- ✅ Add error message display -->
+      <p id="loginError" style="color: red; margin-top: 10px; display: none;"></p>
     </div>
   </div>
 
