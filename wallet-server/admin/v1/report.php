@@ -122,6 +122,10 @@ if ($format === 'csv') {
         
         // Write data rows
         foreach ($rows as $row) {
+            // ✅ Format dates without quotes for better Excel compatibility
+            if (isset($row['transaction_date'])) {
+                $row['transaction_date'] = str_replace('"', '', $row['transaction_date']);
+            }
             fputcsv($output, array_values($row));
         }
     } else {
