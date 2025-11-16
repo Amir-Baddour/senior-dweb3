@@ -1,52 +1,58 @@
 <?php
-// Set JSON response header
-
-
-// Include required dependencies
 require_once __DIR__ . '/../../utils/cors.php';
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
-require_once __DIR__ . '/../../utils/verify_jwt.php'; // Adjust path if necessary
-
+require_once __DIR__ . '/../../utils/jwt.php';
 
 // --- JWT Authentication ---
-// Retrieve the Authorization header and verify JWT
 $headers = getallheaders();
 if (!isset($headers['Authorization'])) {
-    echo json_encode(['error' => 'No authorization header provided']);
-    exit;
-}
-list($bearer, $jwt) = explode(' ', $headers['Authorization']);
-if ($bearer !== 'Bearer' || !$jwt) {
-    echo json_encode(['error' => 'Invalid token format']);
+    echo json_encode(["success" => false, "message" => "No authorization header."]);
     exit;
 }
 
-$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Replace with a secure secret key
-$decoded = verify_jwt($jwt, $jwt_secret);
+$auth_parts = explode(' ', $headers['Authorization']);
+if (count($auth_parts) !== 2 || $auth_parts[0] !== 'Bearer') {
+    echo json_encode(["success" => false, "message" => "Invalid token format."]);
+    exit;
+}
+
+$jwt = $auth_parts[1];
+$decoded = jwt_verify($jwt);
+
 if (!$decoded) {
-    echo json_encode(['error' => 'Invalid or expired token']);
+    echo json_encode(["success" => false, "message" => "Invalid or expired token."]);
     exit;
 }
 
-// Extract user ID from the JWT payload
-$userId = $decoded['id'];
+$user_id = $decoded['id'];
 
 // --- Fetch Verification Status ---
-// Initialize the VerificationsModel and fetch verification record
 try {
     $verificationsModel = new VerificationsModel();
-    $verification = $verificationsModel->getVerificationByUserId($userId);
+    $verification = $verificationsModel->getVerificationByUserId($user_id);
 
-    // If no verification record is found, return a default status of 0
-    if (!$verification) {
-        echo json_encode(['is_validated' => 0]);
-        exit;
+    if ($verification) {
+        // ✅ Return actual status from database
+        echo json_encode([
+            "success" => true,
+            "is_validated" => (int)$verification['is_validated'], // Ensure integer: -1, 0, or 1
+            "validation_note" => $verification['validation_note'] ?? '',
+            "created_at" => $verification['created_at'] ?? null
+        ]);
+    } else {
+        // No verification record yet
+        echo json_encode([
+            "success" => true,
+            "is_validated" => 0, // Not submitted
+            "validation_note" => "No verification submitted yet",
+            "created_at" => null
+        ]);
     }
-    
-    // Return the verification status (cast to integer)
-    echo json_encode(['is_validated' => (int)$verification['is_validated']]);
 } catch (PDOException $e) {
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode([
+        "success" => false, 
+        "message" => "Database error: " . $e->getMessage()
+    ]);
 }
 ?>

@@ -62,35 +62,92 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  // ===== VERIFICATION =====
-  if (document.getElementById("verificationWidget")) {
-    axios
-      .get(`${API_BASE_URL}/get_verification_status.php`, axiosConfig)
-      .then((response) => {
-        console.log('[dashboard.js] Verification response:', response.data);
-        
-        const data = response.data || {};
-        const titleElem = document.getElementById("verificationTitle");
-        const msgElem = document.getElementById("verificationMessage");
-        const btnElem = document.getElementById("verificationButton");
+  // ===== VERIFICATION STATUS CHECK (Add this to your dashboard.js) =====
+if (document.getElementById("verificationWidget")) {
+  const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || 
+    'http://localhost/digital-wallet-plateform/wallet-server/user/v1';
+  
+  const token = localStorage.getItem("jwt") || sessionStorage.getItem("jwt");
+  const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
 
-        if (data.is_validated || data.is_verified) {
-          if (titleElem) titleElem.textContent = "✓ Verified";
-          if (msgElem) msgElem.textContent = "Your account is verified.";
-          if (btnElem) btnElem.style.display = "none";
-        } else {
-          if (titleElem) titleElem.textContent = "⚠ Not Verified";
-          if (msgElem) msgElem.textContent = "Please verify your account to unlock all features.";
-          if (btnElem) {
-            btnElem.style.display = "inline-block";
-            btnElem.textContent = "Verify Now";
-            btnElem.onclick = () => window.location.href = "verifications.html";
-          }
+  axios
+    .get(`${API_BASE_URL}/get_verification_status.php`, axiosConfig)
+    .then((response) => {
+      console.log('[dashboard.js] Verification response:', response.data);
+      
+      const data = response.data || {};
+      const titleElem = document.getElementById("verificationTitle");
+      const msgElem = document.getElementById("verificationMessage");
+      const btnElem = document.getElementById("verificationButton");
+
+      // ✅ FIX: Handle all three states properly
+      const validationStatus = parseInt(data.is_validated);
+      
+      if (validationStatus === 1) {
+        // ✅ APPROVED - Verified
+        if (titleElem) {
+          titleElem.textContent = "✓ Verified";
+          titleElem.style.color = "#10b981"; // Green
         }
-      })
-      .catch((error) => console.error("Verification fetch error:", error));
-  }
-
+        if (msgElem) {
+          msgElem.textContent = "Your account is verified.";
+          msgElem.style.color = "#059669";
+        }
+        if (btnElem) btnElem.style.display = "none";
+        
+      } else if (validationStatus === -1) {
+        // ❌ REJECTED
+        if (titleElem) {
+          titleElem.textContent = "❌ Verification Rejected";
+          titleElem.style.color = "#ef4444"; // Red
+        }
+        if (msgElem) {
+          const reason = data.validation_note || "Your verification was rejected.";
+          msgElem.textContent = `${reason} Please submit again with correct documents.`;
+          msgElem.style.color = "#dc2626";
+        }
+        if (btnElem) {
+          btnElem.style.display = "inline-block";
+          btnElem.textContent = "Resubmit Verification";
+          btnElem.style.backgroundColor = "#ef4444";
+          btnElem.onclick = () => window.location.href = "./verification.html";
+        }
+        
+      } else {
+        // ⏳ PENDING or NOT SUBMITTED (0 or null)
+        if (titleElem) {
+          titleElem.textContent = "⚠ Not Verified";
+          titleElem.style.color = "#f59e0b"; // Orange
+        }
+        if (msgElem) {
+          msgElem.textContent = "Please verify your account to unlock all features.";
+          msgElem.style.color = "#d97706";
+        }
+        if (btnElem) {
+          btnElem.style.display = "inline-block";
+          btnElem.textContent = "Verify Now";
+          btnElem.style.backgroundColor = "#3b82f6";
+          btnElem.onclick = () => window.location.href = "./verification.html";
+        }
+      }
+    })
+    .catch((error) => {
+      console.error("Verification fetch error:", error);
+      
+      // Show error state
+      const titleElem = document.getElementById("verificationTitle");
+      const msgElem = document.getElementById("verificationMessage");
+      
+      if (titleElem) {
+        titleElem.textContent = "⚠ Error Loading Status";
+        titleElem.style.color = "#ef4444";
+      }
+      if (msgElem) {
+        msgElem.textContent = "Could not load verification status. Please refresh the page.";
+        msgElem.style.color = "#dc2626";
+      }
+    });
+}
   // ===== BALANCE =====
   const balanceAmountElem = document.getElementById("balanceAmount");
   if (balanceAmountElem) {
