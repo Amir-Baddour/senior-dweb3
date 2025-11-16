@@ -61,14 +61,15 @@ try {
     $rows = [];
     
     if ($report === 'transactions') {
+        // ✅ FIX: Use actual column names from database
         $stmt = $conn->prepare("
             SELECT 
                 t.id,
                 t.sender_id,
-                t.receiver_id,
+                t.recipient_id,
                 t.amount,
                 t.transaction_type,
-                t.created_at
+                DATE_FORMAT(t.created_at, '%Y-%m-%d %H:%i:%s') as transaction_date
             FROM transactions t
             WHERE DATE(t.created_at) BETWEEN :from AND :to
             ORDER BY t.created_at DESC
