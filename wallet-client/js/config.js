@@ -16,8 +16,8 @@
     // Local development
     API_BASE_URL = `http://localhost${basePath}`;
   } else if (isVercel) {
-    // ✅ When on Vercel (yourwallet0), point to Cloudflare tunnel backend
-    API_BASE_URL = `https://remote-webster-been-fathers.trycloudflare.com${basePath}`;
+    // ✅ UPDATED: New tunnel URL for Vercel frontend
+    API_BASE_URL = `https://hit-plus-economics-menus.trycloudflare.com${basePath}`;
   } else if (isCloudflare) {
     // ✅ When on Cloudflare tunnel, use same origin
     API_BASE_URL = `${location.origin}${basePath}`;
