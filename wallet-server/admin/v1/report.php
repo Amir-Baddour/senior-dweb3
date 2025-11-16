@@ -69,7 +69,7 @@ try {
                 t.recipient_id,
                 t.amount,
                 t.transaction_type,
-                DATE_FORMAT(t.created_at, '%Y-%m-%d %H:%i:%s') as transaction_date
+                t.created_at as transaction_date
             FROM transactions t
             WHERE DATE(t.created_at) BETWEEN :from AND :to
             ORDER BY t.created_at DESC
