@@ -103,22 +103,30 @@ if ($format === 'csv') {
     // Clean output buffer
     while (ob_get_level() > 0) { ob_end_clean(); }
     
+    // ✅ Set proper CSV headers
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $report . '_' . $from . '_' . $to . '.csv"');
     header('Cache-Control: no-cache, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
     
+    // ✅ Output directly to php://output
     $output = fopen('php://output', 'w');
     
+    // ✅ Add UTF-8 BOM for Excel compatibility
+    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+    
     if (!empty($rows)) {
-        // Write headers
+        // Write column headers
         fputcsv($output, array_keys($rows[0]));
         
-        // Write data
+        // Write data rows
         foreach ($rows as $row) {
-            fputcsv($output, $row);
+            fputcsv($output, array_values($row));
         }
     } else {
-        fputcsv($output, ['No data found']);
+        fputcsv($output, ['message']);
+        fputcsv($output, ['No data found for the selected date range']);
     }
     
     fclose($output);
