@@ -127,7 +127,7 @@ if (document.getElementById("verificationWidget")) {
           btnElem.style.display = "inline-block";
           btnElem.textContent = "Verify Now";
           btnElem.style.backgroundColor = "#3b82f6";
-          btnElem.onclick = () => window.location.href = "verification.html";
+          btnElem.onclick = () => window.location.href = "verifications.html";
         }
       }
     })
