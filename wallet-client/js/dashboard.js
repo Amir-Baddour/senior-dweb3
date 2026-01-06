@@ -74,6 +74,8 @@ if (document.getElementById("verificationWidget")) {
     .get(`${API_BASE_URL}/get_verification_status.php`, axiosConfig)
     .then((response) => {
       console.log('[dashboard.js] Verification response:', response.data);
+      console.log('is_validated:', response.data.is_validated);
+      console.log('Type:', typeof response.data.is_validated);
       
       const data = response.data || {};
       const titleElem = document.getElementById("verificationTitle");
