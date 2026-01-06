@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/MailService.php';
-require_once __DIR__ . '/../../utils/jwt.php';
+require_once __DIR__ . '/../../utils/jwt.php'; // ✅ FIX: Use same jwt.php as login.php
 
 $response = ["status" => "error", "message" => "Something went wrong"];
 
@@ -35,6 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     
     $jwt = $parts[1];
     
+    // ✅ FIX: Use jwt_verify from jwt.php instead of verify_jwt
     $decoded = jwt_verify($jwt);
     
     if (!$decoded) {
@@ -44,6 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     
     // --- Admin Authorization Check ---
+    // ✅ Use string comparison since JWT stores role as string
     if (!isset($decoded['role']) || (string)$decoded['role'] !== '1') {
         $response["message"] = "Access denied. Admins only.";
         echo json_encode($response);
@@ -56,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $user_id = $data["user_id"] ?? null;
     $is_validated = $data["is_validated"] ?? null;
     
-    // Validate required parameters
+    // Validate required parameters: user_id must be present and is_validated must be either 1 (approved) or -1 (rejected)
     if (!$user_id || !in_array($is_validated, [1, -1], true)) {
         $response["message"] = "Invalid request parameters.";
         echo json_encode($response);
@@ -75,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             exit;
         }
     
-        // --- Update Verification Status in verifications table ---
+        // --- Update Verification Status ---
         $updated = $verificationsModel->update(
             $verification['id'],
             $verification['user_id'],
@@ -85,28 +87,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         );
     
         if ($updated) {
-            // ✅ CRITICAL FIX: Also update the users table
-            // This ensures the verification status is synced across both tables
-            try {
-                // Use the $conn from db.php
-                global $conn;
-                if (!$conn) {
-                    require_once __DIR__ . '/../../connection/db.php';
-                }
-                
-                // Update users table
-                $stmt = $conn->prepare("UPDATE users SET is_validated = :is_validated WHERE id = :user_id");
-                $stmt->execute([
-                    ':is_validated' => $is_validated,
-                    ':user_id' => $user_id
-                ]);
-                
-                error_log("[update_verification.php] Updated users table for user_id: {$user_id}, is_validated: {$is_validated}");
-            } catch (PDOException $e) {
-                error_log("[update_verification.php] Failed to update users table: " . $e->getMessage());
-                // Continue anyway since verifications table was updated
-            }
-            
             $response["status"] = "success";
             $response["message"] = ($is_validated == 1)
                 ? "User verified successfully!"
@@ -118,6 +98,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $userEmail = $user ? $user['email'] : null;
     
                 if ($userEmail) {
+                    // ✅ Use dynamic URL based on environment
                     // Determine the base URL
                     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
                     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -136,17 +117,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     ";
     
                     $mailer->sendMail($userEmail, $subject, $body);
-                    error_log("[update_verification.php] Verification email sent to: {$userEmail}");
                 }
             }
         } else {
             $response["message"] = "Database update failed.";
         }
     } catch (PDOException $e) {
-        error_log("[update_verification.php] Database error: " . $e->getMessage());
         $response["message"] = "Database error: " . $e->getMessage();
     } catch (Exception $e) {
-        error_log("[update_verification.php] Error: " . $e->getMessage());
         $response["message"] = "Error: " . $e->getMessage();
     }
 }

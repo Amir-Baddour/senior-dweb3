@@ -1,8 +1,16 @@
 <?php
+// ✅ Use cors.php for consistent CORS handling
 require_once __DIR__ . '/../../utils/cors.php';
+
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
-require_once __DIR__ . '/../../utils/jwt.php';
+require_once __DIR__ . '/../../utils/jwt.php'; // ✅ Use jwt.php (not verify_jwt.php)
 
 // --- JWT Authentication ---
 $headers = getallheaders();
@@ -18,10 +26,12 @@ if (count($auth_parts) !== 2 || $auth_parts[0] !== 'Bearer') {
 }
 
 $jwt = $auth_parts[1];
-$decoded = jwt_verify($jwt);
 
-if (!$decoded) {
-    echo json_encode(["success" => false, "message" => "Invalid or expired token."]);
+// ✅ Use jwt_verify() from jwt.php (uses correct secret: mydevsecret123456789)
+try {
+    $decoded = jwt_verify($jwt);
+} catch (RuntimeException $e) {
+    echo json_encode(["success" => false, "message" => "Invalid or expired token: " . $e->getMessage()]);
     exit;
 }
 
