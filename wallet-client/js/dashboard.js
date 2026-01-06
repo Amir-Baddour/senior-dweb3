@@ -110,7 +110,7 @@ if (document.getElementById("verificationWidget")) {
           btnElem.style.display = "inline-block";
           btnElem.textContent = "Resubmit Verification";
           btnElem.style.backgroundColor = "#ef4444";
-          btnElem.onclick = () => window.location.href = "./verification.html";
+          btnElem.onclick = () => window.location.href = "verification.html";
         }
         
       } else {
