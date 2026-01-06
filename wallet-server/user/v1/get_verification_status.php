@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
-require_once __DIR__ . '/../../utils/jwt.php'; // ✅ Use jwt.php (not verify_jwt.php)
+require_once __DIR__ . '/../../utils/verify_jwt.php'; // ✅ Use verify_jwt.php like other user endpoints
 
 // --- JWT Authentication ---
 $headers = getallheaders();
@@ -27,11 +27,12 @@ if (count($auth_parts) !== 2 || $auth_parts[0] !== 'Bearer') {
 
 $jwt = $auth_parts[1];
 
-// ✅ Use jwt_verify() from jwt.php (uses correct secret: mydevsecret123456789)
-try {
-    $decoded = jwt_verify($jwt);
-} catch (RuntimeException $e) {
-    echo json_encode(["success" => false, "message" => "Invalid or expired token: " . $e->getMessage()]);
+// ✅ Use verify_jwt with the SAME secret as login.php
+$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Must match login.php
+$decoded = verify_jwt($jwt, $jwt_secret);
+
+if (!$decoded) {
+    echo json_encode(["success" => false, "message" => "Invalid or expired token."]);
     exit;
 }
 
@@ -47,7 +48,7 @@ try {
         echo json_encode([
             "success" => true,
             "is_validated" => (int)$verification['is_validated'], // Ensure integer: -1, 0, or 1
-            "validation_note" => $verification['validation_note'] ?? '',
+            "validation_note" => $verification['verification_note'] ?? '', // ✅ Fixed column name
             "created_at" => $verification['created_at'] ?? null
         ]);
     } else {
