@@ -13,17 +13,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
-require_once __DIR__ . '/../../utils/verify_jwt.php';
+require_once __DIR__ . '/../../utils/MailService.php';
 
-// Load PHPMailer if available
-$autoload = __DIR__ . '/../../vendor/autoload.php';
-if (file_exists($autoload)) {
-    require_once $autoload;
+// Try to load JWT - check which one exists in your system
+if (file_exists(__DIR__ . '/../../utils/jwt.php')) {
+    require_once __DIR__ . '/../../utils/jwt.php';
+} elseif (file_exists(__DIR__ . '/../../utils/verify_jwt.php')) {
+    require_once __DIR__ . '/../../utils/verify_jwt.php';
 }
 
 $response = ["status" => "error", "message" => "Something went wrong."];
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    error_log('[verification.php] POST request received');
+    
     // Authenticate user via JWT from the Authorization header
     $headers = getallheaders();
     if (!isset($headers['Authorization'])) {
@@ -40,8 +43,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     
     $jwt = $auth_parts[1];
-    $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Must match login.php
-    $decoded = verify_jwt($jwt, $jwt_secret);
+    
+    // Try both JWT verification functions
+    $decoded = null;
+    if (function_exists('jwt_verify')) {
+        $decoded = jwt_verify($jwt);
+    } elseif (function_exists('verify_jwt')) {
+        $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY";
+        $decoded = verify_jwt($jwt, $jwt_secret);
+    }
     
     if (!$decoded) {
         $response["message"] = "Invalid or expired token.";
@@ -50,6 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     
     $user_id = $decoded['id'];
+    error_log('[verification.php] User ID: ' . $user_id);
     
     // Validate file upload
     if (!isset($_FILES["id_document"])) {
@@ -82,8 +93,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $file_name = "id_" . $user_id . "_" . time() . "." . pathinfo($file["name"], PATHINFO_EXTENSION);
     $file_path = $upload_dir . $file_name;
     
+    error_log('[verification.php] Attempting to upload file: ' . $file_name);
+    
     // Move the uploaded file to the designated directory
     if (move_uploaded_file($file["tmp_name"], $file_path)) {
+        error_log('[verification.php] File uploaded successfully');
+        
         // Initialize the models
         $verificationsModel = new VerificationsModel();
         $usersModel = new UsersModel();
@@ -111,22 +126,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
 
-        // ✅ Send email notification to user
+        // Send email notification to user
         if ($response["status"] === "success") {
             error_log('[verification.php] Starting email process for user_id: ' . $user_id);
             
-            $emailSent = false;
-            $emailError = null;
-            
             try {
+                // Get user email
                 $user = $usersModel->getUserById($user_id);
                 $userEmail = $user['email'] ?? null;
                 
                 error_log('[verification.php] User email: ' . ($userEmail ?: 'NULL'));
-                error_log('[verification.php] PHPMailer class exists: ' . (class_exists(\PHPMailer\PHPMailer\PHPMailer::class) ? 'YES' : 'NO'));
 
-                if ($userEmail && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-                    error_log('[verification.php] Attempting to send email...');
+                if ($userEmail) {
+                    error_log('[verification.php] Attempting to send email');
+                    
+                    // Prepare email content
                     $subject = "Verification Document Received";
                     $htmlBody = "
                         <h2>Verification Submitted Successfully</h2>
@@ -139,79 +153,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <p>If you did not submit this document, please contact support immediately.</p>
                         <p>Thank you for your patience!</p>
                     ";
-                    $altBody = "Your verification document has been submitted and is pending review.";
 
-                    $gmailUser = 'amirbaddour675@gmail.com';
-                    $appPass = 'lqtkykunvmmuhsvj';
-
-                    // Try 587 STARTTLS first
-                    try {
-                        error_log('[verification.php] Trying SMTP port 587...');
-                        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-                        $mail->isSMTP();
-                        $mail->Host = 'smtp.gmail.com';
-                        $mail->SMTPAuth = true;
-                        $mail->Username = $gmailUser;
-                        $mail->Password = $appPass;
-                        $mail->Port = 587;
-                        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-                        $mail->CharSet = 'UTF-8';
-                        $mail->setFrom($gmailUser, 'Digital Wallet');
-                        $mail->addAddress($userEmail);
-                        $mail->isHTML(true);
-                        $mail->Subject = $subject;
-                        $mail->Body = $htmlBody;
-                        $mail->AltBody = $altBody;
-                        $mail->send();
-                        $emailSent = true;
-                        error_log('[verification.php] Email sent successfully via port 587!');
-                    } catch (Throwable $e1) {
-                        error_log('[verification.php] Port 587 failed: ' . $e1->getMessage());
-                        error_log('[verification.php] Trying SMTP port 465...');
-                        // Fallback to 465 SMTPS
-                        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-                        $mail->isSMTP();
-                        $mail->Host = 'smtp.gmail.com';
-                        $mail->SMTPAuth = true;
-                        $mail->Username = $gmailUser;
-                        $mail->Password = $appPass;
-                        $mail->Port = 465;
-                        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-                        $mail->CharSet = 'UTF-8';
-                        $mail->setFrom($gmailUser, 'Digital Wallet');
-                        $mail->addAddress($userEmail);
-                        $mail->isHTML(true);
-                        $mail->Subject = $subject;
-                        $mail->Body = $htmlBody;
-                        $mail->AltBody = $altBody;
-                        $mail->send();
-                        $emailSent = true;
-                        error_log('[verification.php] Email sent successfully via port 465!');
+                    // Use MailService
+                    $mailer = new MailService();
+                    $emailSent = $mailer->sendMail($userEmail, $subject, $htmlBody);
+                    
+                    if ($emailSent) {
+                        error_log('[verification.php] ✅ Email sent successfully!');
+                        $response["emailSent"] = true;
+                    } else {
+                        error_log('[verification.php] ❌ Email failed to send');
+                        $response["emailSent"] = false;
+                        $response["emailError"] = "Failed to send email";
                     }
                 } else {
-                    if (!$userEmail) {
-                        $emailError = 'Missing recipient email';
-                        error_log('[verification.php] Email error: Missing recipient email');
-                    }
-                    if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-                        $emailError = 'PHPMailer not installed';
-                        error_log('[verification.php] Email error: PHPMailer not installed');
-                    }
+                    error_log('[verification.php] ❌ No user email found');
+                    $response["emailSent"] = false;
+                    $response["emailError"] = "User email not found";
                 }
-            } catch (Throwable $e) {
-                $emailError = $e->getMessage();
-                error_log('[verification.php] Email exception: ' . $emailError);
+            } catch (Exception $e) {
+                error_log('[verification.php] ❌ Email exception: ' . $e->getMessage());
+                $response["emailSent"] = false;
+                $response["emailError"] = $e->getMessage();
             }
-
-            // Add email info to response (optional)
-            $response["emailSent"] = $emailSent;
-            if ($emailError) {
-                $response["emailError"] = $emailError;
-            }
-            
-            error_log('[verification.php] Email process complete. Sent: ' . ($emailSent ? 'YES' : 'NO') . ', Error: ' . ($emailError ?: 'NONE'));
         }
     } else {
+        error_log('[verification.php] ❌ File upload failed');
         $response["message"] = "File upload failed.";
     }
 }
