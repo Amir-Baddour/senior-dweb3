@@ -15,11 +15,33 @@ require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/MailService.php';
 
-// Try to load JWT - check which one exists in your system
-if (file_exists(__DIR__ . '/../../utils/jwt.php')) {
-    require_once __DIR__ . '/../../utils/jwt.php';
-} elseif (file_exists(__DIR__ . '/../../utils/verify_jwt.php')) {
-    require_once __DIR__ . '/../../utils/verify_jwt.php';
+// JWT verification function matching login.php's approach
+function verify_jwt_local(string $jwt, string $secret): ?array
+{
+    $parts = explode('.', $jwt);
+    if (count($parts) !== 3) {
+        return null;
+    }
+
+    [$base64Header, $base64Payload, $base64Signature] = $parts;
+
+    // Decode and verify signature
+    $signature = base64_decode(str_replace(['-', '_'], ['+', '/'], $base64Signature));
+    $expectedSignature = hash_hmac('sha256', $base64Header . "." . $base64Payload, $secret, true);
+
+    if (!hash_equals($signature, $expectedSignature)) {
+        return null;
+    }
+
+    // Decode payload
+    $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $base64Payload)), true);
+
+    // Check expiration
+    if (isset($payload['exp']) && time() > $payload['exp']) {
+        return null;
+    }
+
+    return $payload;
 }
 
 $response = ["status" => "error", "message" => "Something went wrong."];
@@ -44,13 +66,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     
     $jwt = $auth_parts[1];
     
-    // Try both JWT verification functions
-    $decoded = null;
-    if (function_exists('jwt_verify')) {
-        $decoded = jwt_verify($jwt);
-    } elseif (function_exists('verify_jwt')) {
-        $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY";
-        $decoded = verify_jwt($jwt, $jwt_secret);
+    // ✅ Use the SAME secret as login.php
+    $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY";
+    
+    // Verify JWT token
+    $decoded = verify_jwt_local($jwt, $jwt_secret);
+    
+    if (!$decoded) {
+        error_log('[verification.php] JWT verification failed');
+        $response["message"] = "Invalid or expired token.";
+        echo json_encode($response);
+        exit;
     }
     
     if (!$decoded) {
