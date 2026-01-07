@@ -113,14 +113,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // ✅ Send email notification to user
         if ($response["status"] === "success") {
+            error_log('[verification.php] Starting email process for user_id: ' . $user_id);
+            
             $emailSent = false;
             $emailError = null;
             
             try {
                 $user = $usersModel->getUserById($user_id);
                 $userEmail = $user['email'] ?? null;
+                
+                error_log('[verification.php] User email: ' . ($userEmail ?: 'NULL'));
+                error_log('[verification.php] PHPMailer class exists: ' . (class_exists(\PHPMailer\PHPMailer\PHPMailer::class) ? 'YES' : 'NO'));
 
                 if ($userEmail && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+                    error_log('[verification.php] Attempting to send email...');
                     $subject = "Verification Document Received";
                     $htmlBody = "
                         <h2>Verification Submitted Successfully</h2>
@@ -140,6 +146,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     // Try 587 STARTTLS first
                     try {
+                        error_log('[verification.php] Trying SMTP port 587...');
                         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
                         $mail->isSMTP();
                         $mail->Host = 'smtp.gmail.com';
@@ -157,7 +164,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $mail->AltBody = $altBody;
                         $mail->send();
                         $emailSent = true;
+                        error_log('[verification.php] Email sent successfully via port 587!');
                     } catch (Throwable $e1) {
+                        error_log('[verification.php] Port 587 failed: ' . $e1->getMessage());
+                        error_log('[verification.php] Trying SMTP port 465...');
                         // Fallback to 465 SMTPS
                         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
                         $mail->isSMTP();
@@ -176,14 +186,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $mail->AltBody = $altBody;
                         $mail->send();
                         $emailSent = true;
+                        error_log('[verification.php] Email sent successfully via port 465!');
                     }
                 } else {
-                    if (!$userEmail) $emailError = 'Missing recipient email';
-                    if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) $emailError = 'PHPMailer not installed';
+                    if (!$userEmail) {
+                        $emailError = 'Missing recipient email';
+                        error_log('[verification.php] Email error: Missing recipient email');
+                    }
+                    if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+                        $emailError = 'PHPMailer not installed';
+                        error_log('[verification.php] Email error: PHPMailer not installed');
+                    }
                 }
             } catch (Throwable $e) {
                 $emailError = $e->getMessage();
-                error_log('verification email error: ' . $emailError);
+                error_log('[verification.php] Email exception: ' . $emailError);
             }
 
             // Add email info to response (optional)
@@ -191,6 +208,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($emailError) {
                 $response["emailError"] = $emailError;
             }
+            
+            error_log('[verification.php] Email process complete. Sent: ' . ($emailSent ? 'YES' : 'NO') . ', Error: ' . ($emailError ?: 'NONE'));
         }
     } else {
         $response["message"] = "File upload failed.";
