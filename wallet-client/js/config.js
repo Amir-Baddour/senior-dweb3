@@ -17,7 +17,7 @@
     API_BASE_URL = `http://localhost${basePath}`;
   } else if (isVercel) {
     // ✅ UPDATED: New tunnel URL pointing to port 80
-    API_BASE_URL = `https://accepted-chemical-nissan-amino.trycloudflare.com${basePath}`;
+    API_BASE_URL = `https://sterling-computers-laser-starsmerchant.trycloudflare.com${basePath}`;
   } else if (isCloudflare) {
     // ✅ When on Cloudflare tunnel, use same origin
     API_BASE_URL = `${location.origin}${basePath}`;
