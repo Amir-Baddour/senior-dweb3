@@ -16,7 +16,7 @@ require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
 // Load PHPMailer if available
-$autoload = __DIR__ . '/../../../vendor/autoload.php';
+$autoload = __DIR__ . '/../../vendor/autoload.php';
 if (file_exists($autoload)) {
     require_once $autoload;
 }
