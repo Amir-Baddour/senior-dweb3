@@ -21,7 +21,7 @@ require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
 /* ===============================
-   Composer autoload (CORRECT PATH)
+   Composer autoload
 ================================ */
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
@@ -57,8 +57,8 @@ if (empty($headers['Authorization'])) {
     exit;
 }
 
-$tokenParts = explode(' ', $headers['Authorization']);
-if (count($tokenParts) !== 2 || $tokenParts[0] !== 'Bearer') {
+$parts = explode(' ', $headers['Authorization']);
+if (count($parts) !== 2 || $parts[0] !== 'Bearer') {
     echo json_encode([
         'status' => 'error',
         'message' => 'Invalid token format'
@@ -67,7 +67,7 @@ if (count($tokenParts) !== 2 || $tokenParts[0] !== 'Bearer') {
 }
 
 $jwtSecret = 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY';
-$decoded = verify_jwt($tokenParts[1], $jwtSecret);
+$decoded = verify_jwt($parts[1], $jwtSecret);
 
 if (!$decoded || empty($decoded['id'])) {
     echo json_encode([
@@ -117,8 +117,8 @@ if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0777, true);
 }
 
-$extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-$fileName = 'id_' . $userId . '_' . time() . '.' . $extension;
+$ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+$fileName = 'id_' . $userId . '_' . time() . '.' . $ext;
 $filePath = $uploadDir . $fileName;
 
 if (!move_uploaded_file($file['tmp_name'], $filePath)) {
@@ -159,7 +159,7 @@ if ($existing) {
 $response['status'] = 'success';
 
 /* ===============================
-   EMAIL (MAILTRAP – FINAL & ALLOWED)
+   EMAIL (BEST DECISION)
 ================================ */
 $response['emailSent'] = false;
 
@@ -180,8 +180,8 @@ try {
 
         $mail->CharSet = 'UTF-8';
 
-        // ✅ Mailtrap allowed sender
-        $mail->setFrom('no-reply@mailtrap.io', 'Digital Wallet');
+        /* ✅ ALLOWED SENDER (BEST CHOICE) */
+        $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
         $mail->addAddress($userEmail);
 
         $mail->isHTML(false);
