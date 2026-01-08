@@ -2,6 +2,9 @@
 ob_start();
 header('Content-Type: application/json');
 
+/* ===============================
+   CORS
+================================ */
 require_once __DIR__ . '/../../utils/cors.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -18,7 +21,7 @@ require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
 /* ===============================
-   Composer autoload (CORRECT)
+   Composer autoload (CORRECT PATH)
 ================================ */
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
@@ -31,20 +34,46 @@ $response = [
 ];
 
 /* ===============================
-   JWT
+   Only POST allowed
+================================ */
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid request method'
+    ]);
+    exit;
+}
+
+/* ===============================
+   JWT authentication
 ================================ */
 $headers = getallheaders();
 
 if (empty($headers['Authorization'])) {
-    echo json_encode(['status'=>'error','message'=>'Missing Authorization header']);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Authorization header missing'
+    ]);
     exit;
 }
 
-$token = explode(' ', $headers['Authorization'])[1] ?? null;
-$decoded = verify_jwt($token, 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY');
+$tokenParts = explode(' ', $headers['Authorization']);
+if (count($tokenParts) !== 2 || $tokenParts[0] !== 'Bearer') {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid token format'
+    ]);
+    exit;
+}
+
+$jwtSecret = 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY';
+$decoded = verify_jwt($tokenParts[1], $jwtSecret);
 
 if (!$decoded || empty($decoded['id'])) {
-    echo json_encode(['status'=>'error','message'=>'Invalid or expired token']);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid or expired token'
+    ]);
     exit;
 }
 
@@ -54,20 +83,29 @@ $userId = (int)$decoded['id'];
    File validation
 ================================ */
 if (empty($_FILES['id_document'])) {
-    echo json_encode(['status'=>'error','message'=>'No file uploaded']);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'No file uploaded'
+    ]);
     exit;
 }
 
 $file = $_FILES['id_document'];
+$allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
 
-if ($file['size'] > 2 * 1024 * 1024) {
-    echo json_encode(['status'=>'error','message'=>'File too large']);
+if (!in_array($file['type'], $allowedTypes)) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid file type'
+    ]);
     exit;
 }
 
-$allowed = ['image/jpeg','image/png','application/pdf'];
-if (!in_array($file['type'], $allowed)) {
-    echo json_encode(['status'=>'error','message'=>'Invalid file type']);
+if ($file['size'] > 2 * 1024 * 1024) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'File too large (max 2MB)'
+    ]);
     exit;
 }
 
@@ -75,15 +113,24 @@ if (!in_array($file['type'], $allowed)) {
    Save file
 ================================ */
 $uploadDir = __DIR__ . '/../../uploads/';
-if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0777, true);
+}
 
-$ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-$fileName = 'id_' . $userId . '_' . time() . '.' . $ext;
+$extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+$fileName = 'id_' . $userId . '_' . time() . '.' . $extension;
+$filePath = $uploadDir . $fileName;
 
-move_uploaded_file($file['tmp_name'], $uploadDir . $fileName);
+if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'File upload failed'
+    ]);
+    exit;
+}
 
 /* ===============================
-   DB
+   Database logic
 ================================ */
 $verificationModel = new VerificationsModel();
 $usersModel = new UsersModel();
@@ -112,7 +159,7 @@ if ($existing) {
 $response['status'] = 'success';
 
 /* ===============================
-   EMAIL (GMAIL-SAFE, FINAL)
+   EMAIL (MAILTRAP – FINAL)
 ================================ */
 $response['emailSent'] = false;
 
@@ -122,26 +169,28 @@ try {
 
     if ($userEmail) {
         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+
         $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com';
+        $mail->Host = 'live.smtp.mailtrap.io';
         $mail->SMTPAuth = true;
-        $mail->Username = 'amirbaddour675@gmail.com';
-        $mail->Password = 'lqtkykunvmmuhsvj';
+        $mail->Username = 'api';
+        $mail->Password = '3f99358dec1787d31434756baa86e3fd';
         $mail->Port = 587;
         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
 
         $mail->CharSet = 'UTF-8';
 
-        // 🚨 NO display name — Gmail requirement
-        $mail->setFrom('amirbaddour675@gmail.com');
+        $mail->setFrom('no-reply@digitalwallet.test', 'Digital Wallet');
         $mail->addAddress($userEmail);
 
         $mail->isHTML(false);
         $mail->Subject = 'Verification Document Received';
         $mail->Body =
-            "Your verification document has been received.\n\n" .
+            "Hello,\n\n" .
+            "Your verification document has been received successfully.\n\n" .
             "File: {$fileName}\n" .
-            "Status: Pending review.";
+            "Status: Pending admin approval.\n\n" .
+            "Digital Wallet Team";
 
         $mail->send();
         $response['emailSent'] = true;
@@ -151,6 +200,6 @@ try {
 }
 
 /* ===============================
-   Final
+   Final response
 ================================ */
 echo json_encode($response);
