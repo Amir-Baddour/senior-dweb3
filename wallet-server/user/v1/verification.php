@@ -2,9 +2,9 @@
 ob_start();
 header('Content-Type: application/json');
 
-/* ===============================
+/* =========================
    CORS
-================================ */
+========================= */
 require_once __DIR__ . '/../../utils/cors.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -12,30 +12,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-/* ===============================
-   Core includes
-================================ */
+/* =========================
+   Includes
+========================= */
 require_once __DIR__ . '/../../connection/db.php';
 require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
-
-/* ===============================
-   Composer autoload
-================================ */
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
-/* ===============================
+/* =========================
    Default response
-================================ */
+========================= */
 $response = [
     'status' => 'error',
-    'message' => 'Unexpected error'
+    'message' => 'Something went wrong'
 ];
 
-/* ===============================
-   Only POST allowed
-================================ */
+/* =========================
+   Allow only POST
+========================= */
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'status' => 'error',
@@ -44,9 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-/* ===============================
-   JWT authentication
-================================ */
+/* =========================
+   JWT Auth
+========================= */
 $headers = getallheaders();
 
 if (empty($headers['Authorization'])) {
@@ -57,8 +53,8 @@ if (empty($headers['Authorization'])) {
     exit;
 }
 
-$parts = explode(' ', $headers['Authorization']);
-if (count($parts) !== 2 || $parts[0] !== 'Bearer') {
+$auth = explode(' ', $headers['Authorization']);
+if (count($auth) !== 2 || $auth[0] !== 'Bearer') {
     echo json_encode([
         'status' => 'error',
         'message' => 'Invalid token format'
@@ -66,7 +62,7 @@ if (count($parts) !== 2 || $parts[0] !== 'Bearer') {
     exit;
 }
 
-$decoded = verify_jwt($parts[1], 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY');
+$decoded = verify_jwt($auth[1], 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY');
 
 if (!$decoded || empty($decoded['id'])) {
     echo json_encode([
@@ -78,9 +74,9 @@ if (!$decoded || empty($decoded['id'])) {
 
 $userId = (int)$decoded['id'];
 
-/* ===============================
+/* =========================
    File validation
-================================ */
+========================= */
 if (empty($_FILES['id_document'])) {
     echo json_encode([
         'status' => 'error',
@@ -108,9 +104,9 @@ if ($file['size'] > 2 * 1024 * 1024) {
     exit;
 }
 
-/* ===============================
+/* =========================
    Save file
-================================ */
+========================= */
 $uploadDir = __DIR__ . '/../../uploads/';
 if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0777, true);
@@ -128,9 +124,9 @@ if (!move_uploaded_file($file['tmp_name'], $filePath)) {
     exit;
 }
 
-/* ===============================
-   Database logic
-================================ */
+/* =========================
+   Database
+========================= */
 $verificationsModel = new VerificationsModel();
 $usersModel = new UsersModel();
 
@@ -157,9 +153,9 @@ if ($existing) {
 
 $response['status'] = 'success';
 
-/* ===============================
-   EMAIL (BREVO – REAL DELIVERY)
-================================ */
+/* =========================
+   EMAIL (BREVO – REAL)
+========================= */
 $response['emailSent'] = false;
 
 try {
@@ -172,16 +168,18 @@ try {
         $mail->isSMTP();
         $mail->Host = 'smtp-relay.brevo.com';
         $mail->SMTPAuth = true;
+        $mail->AuthType = 'LOGIN';
 
-        // ✅ Brevo SMTP credentials
         $mail->Username = '9f9f14001@smtp-brevo.com';
-        $mail->Password = 'RKWndDBs/phYKfG2';
+        $mail->Password = 'xsmtpsib-712e5f0ebae474e4640de20808d3151103b238941946a3702b1149d79b52aa97-oqR9XPoYIwknTWId';
 
         $mail->Port = 587;
         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->CharSet = 'UTF-8';
 
-        // ✅ VERIFIED sender in Brevo
+        $mail->CharSet = 'UTF-8';
+        $mail->Timeout = 30;
+
+        // VERIFIED sender in Brevo
         $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
         $mail->addAddress($userEmail);
 
@@ -200,7 +198,7 @@ try {
     $response['emailError'] = $e->getMessage();
 }
 
-/* ===============================
-   Final response
-================================ */
+/* =========================
+   Response
+========================= */
 echo json_encode($response);
