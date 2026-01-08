@@ -159,7 +159,7 @@ if ($existing) {
 $response['status'] = 'success';
 
 /* ===============================
-   EMAIL (MAILTRAP – FINAL)
+   EMAIL (MAILTRAP – FINAL & ALLOWED)
 ================================ */
 $response['emailSent'] = false;
 
@@ -180,7 +180,8 @@ try {
 
         $mail->CharSet = 'UTF-8';
 
-        $mail->setFrom('no-reply@digitalwallet.test', 'Digital Wallet');
+        // ✅ Mailtrap allowed sender
+        $mail->setFrom('no-reply@mailtrap.io', 'Digital Wallet');
         $mail->addAddress($userEmail);
 
         $mail->isHTML(false);
