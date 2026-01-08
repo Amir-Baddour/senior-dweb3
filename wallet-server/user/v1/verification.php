@@ -34,20 +34,45 @@ $response = [
 ];
 
 /* ===============================
+   Only POST allowed
+================================ */
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid request method'
+    ]);
+    exit;
+}
+
+/* ===============================
    JWT authentication
 ================================ */
 $headers = getallheaders();
 
 if (empty($headers['Authorization'])) {
-    echo json_encode(['status'=>'error','message'=>'Authorization header missing']);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Authorization header missing'
+    ]);
     exit;
 }
 
 $parts = explode(' ', $headers['Authorization']);
-$decoded = verify_jwt($parts[1] ?? '', 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY');
+if (count($parts) !== 2 || $parts[0] !== 'Bearer') {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid token format'
+    ]);
+    exit;
+}
+
+$decoded = verify_jwt($parts[1], 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY');
 
 if (!$decoded || empty($decoded['id'])) {
-    echo json_encode(['status'=>'error','message'=>'Invalid or expired token']);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid or expired token'
+    ]);
     exit;
 }
 
@@ -57,14 +82,29 @@ $userId = (int)$decoded['id'];
    File validation
 ================================ */
 if (empty($_FILES['id_document'])) {
-    echo json_encode(['status'=>'error','message'=>'No file uploaded']);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'No file uploaded'
+    ]);
     exit;
 }
 
 $file = $_FILES['id_document'];
+$allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+
+if (!in_array($file['type'], $allowedTypes)) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid file type'
+    ]);
+    exit;
+}
 
 if ($file['size'] > 2 * 1024 * 1024) {
-    echo json_encode(['status'=>'error','message'=>'File too large']);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'File too large (max 2MB)'
+    ]);
     exit;
 }
 
@@ -80,18 +120,24 @@ $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
 $fileName = 'id_' . $userId . '_' . time() . '.' . $ext;
 $filePath = $uploadDir . $fileName;
 
-move_uploaded_file($file['tmp_name'], $filePath);
+if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'File upload failed'
+    ]);
+    exit;
+}
 
 /* ===============================
-   Database
+   Database logic
 ================================ */
-$verifications = new VerificationsModel();
+$verificationsModel = new VerificationsModel();
 $usersModel = new UsersModel();
 
-$existing = $verifications->getVerificationByUserId($userId);
+$existing = $verificationsModel->getVerificationByUserId($userId);
 
 if ($existing) {
-    $verifications->update(
+    $verificationsModel->update(
         $existing['id'],
         $userId,
         $fileName,
@@ -100,7 +146,7 @@ if ($existing) {
     );
     $response['message'] = 'Document updated successfully. Pending admin approval.';
 } else {
-    $verifications->create(
+    $verificationsModel->create(
         $userId,
         $fileName,
         0,
@@ -127,19 +173,19 @@ try {
         $mail->Host = 'smtp-relay.brevo.com';
         $mail->SMTPAuth = true;
 
-        // 🔑 Brevo SMTP credentials
+        // ✅ Brevo SMTP credentials
         $mail->Username = '9f9f14001@smtp-brevo.com';
         $mail->Password = 'RKWndDBs/phYKfG2';
 
         $mail->Port = 587;
         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-
         $mail->CharSet = 'UTF-8';
 
-        // Must be a verified sender in Brevo
+        // ✅ VERIFIED sender in Brevo
         $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
         $mail->addAddress($userEmail);
 
+        $mail->isHTML(false);
         $mail->Subject = 'Verification Document Received';
         $mail->Body =
             "Hello,\n\n" .
@@ -154,4 +200,7 @@ try {
     $response['emailError'] = $e->getMessage();
 }
 
+/* ===============================
+   Final response
+================================ */
 echo json_encode($response);
