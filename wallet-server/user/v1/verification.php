@@ -154,7 +154,7 @@ if ($existing) {
 $response['status'] = 'success';
 
 /* =========================
-   EMAIL (BREVO – REAL)
+   EMAIL (BREVO – SAFE)
 ========================= */
 $response['emailSent'] = false;
 
@@ -166,21 +166,24 @@ try {
         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
 
         $mail->isSMTP();
-        $mail->Host = 'smtp-relay.brevo.com';
+        $mail->Host = getenv('BREVO_SMTP_HOST');
         $mail->SMTPAuth = true;
         $mail->AuthType = 'LOGIN';
 
-        $mail->Username = '9f9f14001@smtp-brevo.com';
-        $mail->Password = 'xsmtpsib-712e5f0ebae474e4640de20808d3151103b238941946a3702b1149d79b52aa97-oqR9XPoYIwknTWId';
+        $mail->Username = getenv('BREVO_SMTP_USER');
+        $mail->Password = getenv('BREVO_SMTP_PASS');
 
-        $mail->Port = 587;
+        $mail->Port = (int)getenv('BREVO_SMTP_PORT');
         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
 
         $mail->CharSet = 'UTF-8';
         $mail->Timeout = 30;
 
-        // VERIFIED sender in Brevo
-        $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
+        $mail->setFrom(
+            getenv('BREVO_FROM_EMAIL'),
+            getenv('BREVO_FROM_NAME')
+        );
+
         $mail->addAddress($userEmail);
 
         $mail->isHTML(false);
