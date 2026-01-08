@@ -16,7 +16,7 @@ require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
 // Load PHPMailer if available
-$autoload = __DIR__ . '/../../../vendor/autoload.php';
+$autoload = __DIR__ . '/../../vendor/autoload.php';
 if (file_exists($autoload)) {
     require_once $autoload;
 }
@@ -128,18 +128,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 if ($userEmail && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
                     error_log('[verification.php] Attempting to send email...');
                     $subject = "Verification Document Received";
+                    
+                    // ✅ Simplified HTML body (Gmail-friendly)
                     $htmlBody = "
-                        <h2>Verification Submitted Successfully</h2>
-                        <p>Dear User,</p>
-                        <p>We have received your verification document and it is now pending review by our team.</p>
-                        <p>You will receive a notification once your verification has been processed.</p>
-                        <p><strong>Document:</strong> {$file_name}</p>
-                        <p><strong>Submitted:</strong> " . date('Y-m-d H:i:s') . "</p>
-                        <hr>
-                        <p>If you did not submit this document, please contact support immediately.</p>
-                        <p>Thank you for your patience!</p>
+                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                            <h2 style='color: #333;'>Verification Submitted Successfully</h2>
+                            <p>Dear User,</p>
+                            <p>We have received your verification document and it is now pending review by our team.</p>
+                            <p>You will receive a notification once your verification has been processed.</p>
+                            <p><strong>Document:</strong> {$file_name}</p>
+                            <p><strong>Submitted:</strong> " . date('Y-m-d H:i:s') . "</p>
+                            <hr style='border: 1px solid #ddd; margin: 20px 0;'>
+                            <p style='color: #666; font-size: 12px;'>If you did not submit this document, please contact support immediately.</p>
+                            <p style='color: #666; font-size: 12px;'>Thank you for your patience!</p>
+                        </div>
                     ";
-                    $altBody = "Your verification document has been submitted and is pending review.";
+                    $altBody = "Your verification document has been submitted and is pending review. Document: {$file_name}";
 
                     $gmailUser = 'amirbaddour675@gmail.com';
                     $appPass = 'lqtkykunvmmuhsvj';
@@ -156,6 +160,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $mail->Port = 587;
                         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
                         $mail->CharSet = 'UTF-8';
+                        $mail->SMTPDebug = 0; // Disable debug output
+                        $mail->Timeout = 30;
                         $mail->setFrom($gmailUser, 'Digital Wallet');
                         $mail->addAddress($userEmail);
                         $mail->isHTML(true);
@@ -168,25 +174,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     } catch (Throwable $e1) {
                         error_log('[verification.php] Port 587 failed: ' . $e1->getMessage());
                         error_log('[verification.php] Trying SMTP port 465...');
-                        // Fallback to 465 SMTPS
-                        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-                        $mail->isSMTP();
-                        $mail->Host = 'smtp.gmail.com';
-                        $mail->SMTPAuth = true;
-                        $mail->Username = $gmailUser;
-                        $mail->Password = $appPass;
-                        $mail->Port = 465;
-                        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-                        $mail->CharSet = 'UTF-8';
-                        $mail->setFrom($gmailUser, 'Digital Wallet');
-                        $mail->addAddress($userEmail);
-                        $mail->isHTML(true);
-                        $mail->Subject = $subject;
-                        $mail->Body = $htmlBody;
-                        $mail->AltBody = $altBody;
-                        $mail->send();
-                        $emailSent = true;
-                        error_log('[verification.php] Email sent successfully via port 465!');
+                        
+                        try {
+                            // Fallback to 465 SMTPS
+                            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+                            $mail->isSMTP();
+                            $mail->Host = 'smtp.gmail.com';
+                            $mail->SMTPAuth = true;
+                            $mail->Username = $gmailUser;
+                            $mail->Password = $appPass;
+                            $mail->Port = 465;
+                            $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+                            $mail->CharSet = 'UTF-8';
+                            $mail->SMTPDebug = 0;
+                            $mail->Timeout = 30;
+                            $mail->setFrom($gmailUser, 'Digital Wallet');
+                            $mail->addAddress($userEmail);
+                            $mail->isHTML(true);
+                            $mail->Subject = $subject;
+                            $mail->Body = $htmlBody;
+                            $mail->AltBody = $altBody;
+                            $mail->send();
+                            $emailSent = true;
+                            error_log('[verification.php] Email sent successfully via port 465!');
+                        } catch (Throwable $e2) {
+                            error_log('[verification.php] Port 465 also failed: ' . $e2->getMessage());
+                            throw $e2; // Re-throw to be caught by outer catch
+                        }
                     }
                 } else {
                     if (!$userEmail) {
