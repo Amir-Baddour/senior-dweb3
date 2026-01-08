@@ -80,10 +80,7 @@ $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
 $fileName = 'id_' . $userId . '_' . time() . '.' . $ext;
 $filePath = $uploadDir . $fileName;
 
-if (!move_uploaded_file($file['tmp_name'], $filePath)) {
-    echo json_encode(['status'=>'error','message'=>'File upload failed']);
-    exit;
-}
+move_uploaded_file($file['tmp_name'], $filePath);
 
 /* ===============================
    Database
@@ -115,7 +112,7 @@ if ($existing) {
 $response['status'] = 'success';
 
 /* ===============================
-   EMAIL (MAILTRAP SANDBOX – FINAL)
+   EMAIL (BREVO – REAL DELIVERY)
 ================================ */
 $response['emailSent'] = false;
 
@@ -127,25 +124,26 @@ try {
         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
 
         $mail->isSMTP();
-        $mail->Host = 'sandbox.smtp.mailtrap.io';
+        $mail->Host = 'smtp-relay.brevo.com';
         $mail->SMTPAuth = true;
-        $mail->Username = 'c9ccab0a253d6';
-        $mail->Password = '019abb8ec16534';
+
+        // 🔑 Brevo SMTP credentials
+        $mail->Username = '9f9f14001@smtp-brevo.com';
+        $mail->Password = 'RKWndDBs/phYKfG2';
+
         $mail->Port = 587;
         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
 
         $mail->CharSet = 'UTF-8';
 
-        // Sandbox allows any FROM address
-        $mail->setFrom('no-reply@digitalwallet.local', 'Digital Wallet');
+        // Must be a verified sender in Brevo
+        $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
         $mail->addAddress($userEmail);
 
-        $mail->isHTML(false);
         $mail->Subject = 'Verification Document Received';
         $mail->Body =
             "Hello,\n\n" .
             "Your verification document has been received successfully.\n\n" .
-            "File: {$fileName}\n" .
             "Status: Pending admin approval.\n\n" .
             "Digital Wallet Team";
 
