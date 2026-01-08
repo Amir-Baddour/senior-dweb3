@@ -16,10 +16,18 @@ require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
 // Load PHPMailer if available
-$autoload = __DIR__ . '/../../vendor/autoload.php';
-if (file_exists($autoload)) {
+$autoload = __DIR__ . '/../../../vendor/autoload.php';
+$autoload = __DIR__ . '/../../../vendor/autoload.php';
+if (!file_exists($autoload)) {
+    error_log('[verification.php] Composer autoload NOT found: ' . $autoload);
+} else {
     require_once $autoload;
+    error_log('[verification.php] Composer autoload loaded successfully');
 }
+
+/*if (file_exists($autoload)) {
+    require_once $autoload;
+}*/
 
 $response = ["status" => "error", "message" => "Something went wrong."];
 
