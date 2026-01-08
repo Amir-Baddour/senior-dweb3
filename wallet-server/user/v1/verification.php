@@ -34,46 +34,20 @@ $response = [
 ];
 
 /* ===============================
-   Only POST allowed
-================================ */
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Invalid request method'
-    ]);
-    exit;
-}
-
-/* ===============================
    JWT authentication
 ================================ */
 $headers = getallheaders();
 
 if (empty($headers['Authorization'])) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Authorization header missing'
-    ]);
+    echo json_encode(['status'=>'error','message'=>'Authorization header missing']);
     exit;
 }
 
 $parts = explode(' ', $headers['Authorization']);
-if (count($parts) !== 2 || $parts[0] !== 'Bearer') {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Invalid token format'
-    ]);
-    exit;
-}
-
-$jwtSecret = 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY';
-$decoded = verify_jwt($parts[1], $jwtSecret);
+$decoded = verify_jwt($parts[1] ?? '', 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY');
 
 if (!$decoded || empty($decoded['id'])) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Invalid or expired token'
-    ]);
+    echo json_encode(['status'=>'error','message'=>'Invalid or expired token']);
     exit;
 }
 
@@ -83,29 +57,14 @@ $userId = (int)$decoded['id'];
    File validation
 ================================ */
 if (empty($_FILES['id_document'])) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'No file uploaded'
-    ]);
+    echo json_encode(['status'=>'error','message'=>'No file uploaded']);
     exit;
 }
 
 $file = $_FILES['id_document'];
-$allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-
-if (!in_array($file['type'], $allowedTypes)) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Invalid file type'
-    ]);
-    exit;
-}
 
 if ($file['size'] > 2 * 1024 * 1024) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'File too large (max 2MB)'
-    ]);
+    echo json_encode(['status'=>'error','message'=>'File too large']);
     exit;
 }
 
@@ -122,23 +81,20 @@ $fileName = 'id_' . $userId . '_' . time() . '.' . $ext;
 $filePath = $uploadDir . $fileName;
 
 if (!move_uploaded_file($file['tmp_name'], $filePath)) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'File upload failed'
-    ]);
+    echo json_encode(['status'=>'error','message'=>'File upload failed']);
     exit;
 }
 
 /* ===============================
-   Database logic
+   Database
 ================================ */
-$verificationModel = new VerificationsModel();
+$verifications = new VerificationsModel();
 $usersModel = new UsersModel();
 
-$existing = $verificationModel->getVerificationByUserId($userId);
+$existing = $verifications->getVerificationByUserId($userId);
 
 if ($existing) {
-    $verificationModel->update(
+    $verifications->update(
         $existing['id'],
         $userId,
         $fileName,
@@ -147,7 +103,7 @@ if ($existing) {
     );
     $response['message'] = 'Document updated successfully. Pending admin approval.';
 } else {
-    $verificationModel->create(
+    $verifications->create(
         $userId,
         $fileName,
         0,
@@ -159,7 +115,7 @@ if ($existing) {
 $response['status'] = 'success';
 
 /* ===============================
-   EMAIL (BEST DECISION)
+   EMAIL (MAILTRAP SANDBOX – FINAL)
 ================================ */
 $response['emailSent'] = false;
 
@@ -171,17 +127,17 @@ try {
         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
 
         $mail->isSMTP();
-        $mail->Host = 'live.smtp.mailtrap.io';
+        $mail->Host = 'sandbox.smtp.mailtrap.io';
         $mail->SMTPAuth = true;
-        $mail->Username = 'api';
-        $mail->Password = '3f99358dec1787d31434756baa86e3fd';
+        $mail->Username = 'c9ccab0a253d6';
+        $mail->Password = '019abb8ec16534';
         $mail->Port = 587;
         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
 
         $mail->CharSet = 'UTF-8';
 
-        /* ✅ ALLOWED SENDER (BEST CHOICE) */
-        $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
+        // Sandbox allows any FROM address
+        $mail->setFrom('no-reply@digitalwallet.local', 'Digital Wallet');
         $mail->addAddress($userEmail);
 
         $mail->isHTML(false);
@@ -200,7 +156,4 @@ try {
     $response['emailError'] = $e->getMessage();
 }
 
-/* ===============================
-   Final response
-================================ */
 echo json_encode($response);
