@@ -2,9 +2,6 @@
 ob_start();
 header('Content-Type: application/json');
 
-/* ===============================
-   CORS
-================================ */
 require_once __DIR__ . '/../../utils/cors.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -23,15 +20,7 @@ require_once __DIR__ . '/../../utils/verify_jwt.php';
 /* ===============================
    Composer autoload (CORRECT)
 ================================ */
-$autoload = __DIR__ . '/../../../vendor/autoload.php';
-if (!file_exists($autoload)) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Server misconfiguration (autoload missing)'
-    ]);
-    exit;
-}
-require_once $autoload;
+require_once __DIR__ . '/../../../vendor/autoload.php';
 
 /* ===============================
    Default response
@@ -42,44 +31,20 @@ $response = [
 ];
 
 /* ===============================
-   Only POST allowed
-================================ */
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    $response['message'] = 'Invalid request method';
-    echo json_encode($response);
-    exit;
-}
-
-/* ===============================
-   JWT authentication
+   JWT
 ================================ */
 $headers = getallheaders();
 
 if (empty($headers['Authorization'])) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Authorization header missing'
-    ]);
+    echo json_encode(['status'=>'error','message'=>'Missing Authorization header']);
     exit;
 }
 
-$tokenParts = explode(' ', $headers['Authorization']);
-if (count($tokenParts) !== 2 || $tokenParts[0] !== 'Bearer') {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Invalid authorization format'
-    ]);
-    exit;
-}
-
-$jwtSecret = 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY';
-$decoded = verify_jwt($tokenParts[1], $jwtSecret);
+$token = explode(' ', $headers['Authorization'])[1] ?? null;
+$decoded = verify_jwt($token, 'CHANGE_THIS_TO_A_RANDOM_SECRET_KEY');
 
 if (!$decoded || empty($decoded['id'])) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Invalid or expired token'
-    ]);
+    echo json_encode(['status'=>'error','message'=>'Invalid or expired token']);
     exit;
 }
 
@@ -89,29 +54,20 @@ $userId = (int)$decoded['id'];
    File validation
 ================================ */
 if (empty($_FILES['id_document'])) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'No file uploaded'
-    ]);
+    echo json_encode(['status'=>'error','message'=>'No file uploaded']);
     exit;
 }
 
 $file = $_FILES['id_document'];
-$allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
 
-if (!in_array($file['type'], $allowedTypes)) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Invalid file type'
-    ]);
+if ($file['size'] > 2 * 1024 * 1024) {
+    echo json_encode(['status'=>'error','message'=>'File too large']);
     exit;
 }
 
-if ($file['size'] > 2 * 1024 * 1024) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'File too large (max 2MB)'
-    ]);
+$allowed = ['image/jpeg','image/png','application/pdf'];
+if (!in_array($file['type'], $allowed)) {
+    echo json_encode(['status'=>'error','message'=>'Invalid file type']);
     exit;
 }
 
@@ -119,24 +75,15 @@ if ($file['size'] > 2 * 1024 * 1024) {
    Save file
 ================================ */
 $uploadDir = __DIR__ . '/../../uploads/';
-if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0777, true);
-}
+if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
-$extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-$fileName = 'id_' . $userId . '_' . time() . '.' . $extension;
-$filePath = $uploadDir . $fileName;
+$ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+$fileName = 'id_' . $userId . '_' . time() . '.' . $ext;
 
-if (!move_uploaded_file($file['tmp_name'], $filePath)) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'File upload failed'
-    ]);
-    exit;
-}
+move_uploaded_file($file['tmp_name'], $uploadDir . $fileName);
 
 /* ===============================
-   Database logic
+   DB
 ================================ */
 $verificationModel = new VerificationsModel();
 $usersModel = new UsersModel();
@@ -144,7 +91,7 @@ $usersModel = new UsersModel();
 $existing = $verificationModel->getVerificationByUserId($userId);
 
 if ($existing) {
-    $ok = $verificationModel->update(
+    $verificationModel->update(
         $existing['id'],
         $userId,
         $fileName,
@@ -153,7 +100,7 @@ if ($existing) {
     );
     $response['message'] = 'Document updated successfully. Pending admin approval.';
 } else {
-    $ok = $verificationModel->create(
+    $verificationModel->create(
         $userId,
         $fileName,
         0,
@@ -162,18 +109,10 @@ if ($existing) {
     $response['message'] = 'Document uploaded successfully. Pending admin approval.';
 }
 
-if (!$ok) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Database error'
-    ]);
-    exit;
-}
-
 $response['status'] = 'success';
 
 /* ===============================
-   Email notification (GMAIL-SAFE)
+   EMAIL (GMAIL-SAFE, FINAL)
 ================================ */
 $response['emailSent'] = false;
 
@@ -181,8 +120,7 @@ try {
     $user = $usersModel->getUserById($userId);
     $userEmail = $user['email'] ?? null;
 
-    if ($userEmail && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-
+    if ($userEmail) {
         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = 'smtp.gmail.com';
@@ -193,33 +131,26 @@ try {
         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
 
         $mail->CharSet = 'UTF-8';
-        $mail->Encoding = 'base64';
 
-        /* IMPORTANT: NO Sender header (Gmail forbids it) */
-        $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
-        $mail->addReplyTo('amirbaddour675@gmail.com', 'Digital Wallet');
-
+        // 🚨 NO display name — Gmail requirement
+        $mail->setFrom('amirbaddour675@gmail.com');
         $mail->addAddress($userEmail);
-        $mail->isHTML(true);
 
+        $mail->isHTML(false);
         $mail->Subject = 'Verification Document Received';
-        $mail->Body = "
-            <p>Hello,</p>
-            <p>Your verification document has been received successfully.</p>
-            <p><strong>File:</strong> {$fileName}</p>
-            <p>Status: Pending admin review.</p>
-        ";
-        $mail->AltBody = 'Your verification document has been received and is pending review.';
+        $mail->Body =
+            "Your verification document has been received.\n\n" .
+            "File: {$fileName}\n" .
+            "Status: Pending review.";
 
         $mail->send();
         $response['emailSent'] = true;
     }
 } catch (Throwable $e) {
-    error_log('[verification.php] Email error: ' . $e->getMessage());
     $response['emailError'] = $e->getMessage();
 }
 
 /* ===============================
-   Final response
+   Final
 ================================ */
 echo json_encode($response);
