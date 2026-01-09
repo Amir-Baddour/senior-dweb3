@@ -16,11 +16,12 @@ require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
 // Load PHPMailer if available
-$autoload = __DIR__ . '/../../vendor/autoload.php';
+$autoload = __DIR__ . '/../../../vendor/autoload.php';
 if (file_exists($autoload)) {
     require_once $autoload;
+} else {
+    error_log('[verify-document.php] Autoload not found at: ' . $autoload);
 }
-
 $response = ["status" => "error", "message" => "Something went wrong."];
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
