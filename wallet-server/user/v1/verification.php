@@ -15,13 +15,18 @@ require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
-// Load PHPMailer if available - FIXED PATH (3 levels up)
+// Load PHPMailer if available
 $autoload = __DIR__ . '/../../../vendor/autoload.php';
 if (file_exists($autoload)) {
     require_once $autoload;
 } else {
     error_log('[verification.php] Autoload not found at: ' . $autoload);
 }
+
+// Import PHPMailer classes
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
 $response = ["status" => "error", "message" => "Something went wrong."];
 
@@ -113,8 +118,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
 
-        // ✅ Send email notification to user
-        // ✅ Send email notification to user
+        // Send email notification to user
         if ($response["status"] === "success") {
             error_log('[verification.php] Starting email process for user_id: ' . $user_id);
             
@@ -127,39 +131,61 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 
                 error_log('[verification.php] User email: ' . ($userEmail ?: 'NULL'));
 
-                if ($userEmail && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+                if ($userEmail && class_exists(PHPMailer::class)) {
                     error_log('[verification.php] Attempting to send email...');
                     
-                    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+                    $mail = new PHPMailer(true);
+                    
+                    // Enable verbose debug output
+                    $mail->SMTPDebug = SMTP::DEBUG_SERVER;
+                    $mail->Debugoutput = function($str, $level) {
+                        error_log("[PHPMailer Debug] $str");
+                    };
                     
                     // Server settings
                     $mail->isSMTP();
                     $mail->Host = 'smtp.gmail.com';
                     $mail->SMTPAuth = true;
                     $mail->Username = 'amirbaddour675@gmail.com';
-                    $mail->Password = 'lqtkykunvmmuhsvj';  // ⚠️ Check if this is still valid!
-                    $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Password = 'lqtkykunvmmuhsvj';
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                     $mail->Port = 587;
+                    $mail->CharSet = 'UTF-8';
+                    
+                    // Set timeout values
+                    $mail->Timeout = 30;
+                    $mail->SMTPKeepAlive = true;
                     
                     // Recipients
                     $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
                     $mail->addAddress($userEmail);
+                    $mail->addReplyTo('amirbaddour675@gmail.com', 'Digital Wallet Support');
                     
                     // Content
                     $mail->isHTML(false);
                     $mail->Subject = 'Verification Document Received';
-                    $mail->Body = "Your verification document has been received and is pending review.\n\nDocument: {$file_name}\nSubmitted: " . date('Y-m-d H:i:s');
+                    $mail->Body = "Dear User,\n\n" .
+                                  "Your verification document has been received and is pending review.\n\n" .
+                                  "Document: {$file_name}\n" .
+                                  "Submitted: " . date('Y-m-d H:i:s') . "\n\n" .
+                                  "We will review your document and notify you once the verification is complete.\n\n" .
+                                  "Best regards,\n" .
+                                  "Digital Wallet Team";
                     
                     $mail->send();
                     $emailSent = true;
-                    error_log('[verification.php] Email sent successfully!');
+                    error_log('[verification.php] Email sent successfully to: ' . $userEmail);
                 } else {
                     $emailError = !$userEmail ? 'Missing recipient email' : 'PHPMailer not installed';
                     error_log('[verification.php] Email error: ' . $emailError);
                 }
-            } catch (Throwable $e) {
+            } catch (Exception $e) {
                 $emailError = $e->getMessage();
                 error_log('[verification.php] Email exception: ' . $emailError);
+                error_log('[verification.php] Full error info: ' . $mail->ErrorInfo);
+            } catch (Throwable $e) {
+                $emailError = $e->getMessage();
+                error_log('[verification.php] Unexpected error: ' . $emailError);
             }
 
             $response["emailSent"] = $emailSent;
