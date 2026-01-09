@@ -15,13 +15,14 @@ require_once __DIR__ . '/../../models/VerificationsModel.php';
 require_once __DIR__ . '/../../models/UsersModel.php';
 require_once __DIR__ . '/../../utils/verify_jwt.php';
 
-// Load PHPMailer if available
+// Load PHPMailer if available - FIXED PATH (3 levels up)
 $autoload = __DIR__ . '/../../../vendor/autoload.php';
 if (file_exists($autoload)) {
     require_once $autoload;
 } else {
-    error_log('[verify-document.php] Autoload not found at: ' . $autoload);
+    error_log('[verification.php] Autoload not found at: ' . $autoload);
 }
+
 $response = ["status" => "error", "message" => "Something went wrong."];
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -130,26 +131,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     error_log('[verification.php] Attempting to send email...');
                     $subject = "Verification Document Received";
                     
-                    // ✅ Simplified HTML body (Gmail-friendly)
-                    $htmlBody = "
-                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
-                            <h2 style='color: #333;'>Verification Submitted Successfully</h2>
-                            <p>Dear User,</p>
-                            <p>We have received your verification document and it is now pending review by our team.</p>
-                            <p>You will receive a notification once your verification has been processed.</p>
-                            <p><strong>Document:</strong> {$file_name}</p>
-                            <p><strong>Submitted:</strong> " . date('Y-m-d H:i:s') . "</p>
-                            <hr style='border: 1px solid #ddd; margin: 20px 0;'>
-                            <p style='color: #666; font-size: 12px;'>If you did not submit this document, please contact support immediately.</p>
-                            <p style='color: #666; font-size: 12px;'>Thank you for your patience!</p>
-                        </div>
-                    ";
-                    $altBody = "Your verification document has been submitted and is pending review. Document: {$file_name}";
+                    // ✅ SIMPLIFIED plain text version (avoid Gmail spam filters)
+                    $plainBody = "Dear User,\n\nWe have received your verification document and it is now pending review by our team.\n\nYou will receive a notification once your verification has been processed.\n\nDocument: {$file_name}\nSubmitted: " . date('Y-m-d H:i:s') . "\n\nIf you did not submit this document, please contact support immediately.\n\nThank you!";
 
                     $gmailUser = 'amirbaddour675@gmail.com';
                     $appPass = 'lqtkykunvmmuhsvj';
 
-                    // Try 587 STARTTLS first
+                    // Try 587 STARTTLS
                     try {
                         error_log('[verification.php] Trying SMTP port 587...');
                         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
@@ -161,47 +149,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $mail->Port = 587;
                         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
                         $mail->CharSet = 'UTF-8';
-                        $mail->SMTPDebug = 0; // Disable debug output
+                        $mail->SMTPDebug = 2; // ✅ Enable debug
+                        $mail->Debugoutput = function($str, $level) {
+                            error_log("[PHPMailer DEBUG] $str");
+                        };
                         $mail->Timeout = 30;
                         $mail->setFrom($gmailUser, 'Digital Wallet');
                         $mail->addAddress($userEmail);
-                        $mail->isHTML(true);
+                        $mail->isHTML(false); // ✅ Plain text
                         $mail->Subject = $subject;
-                        $mail->Body = $htmlBody;
-                        $mail->AltBody = $altBody;
+                        $mail->Body = $plainBody;
                         $mail->send();
                         $emailSent = true;
                         error_log('[verification.php] Email sent successfully via port 587!');
                     } catch (Throwable $e1) {
                         error_log('[verification.php] Port 587 failed: ' . $e1->getMessage());
-                        error_log('[verification.php] Trying SMTP port 465...');
-                        
-                        try {
-                            // Fallback to 465 SMTPS
-                            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-                            $mail->isSMTP();
-                            $mail->Host = 'smtp.gmail.com';
-                            $mail->SMTPAuth = true;
-                            $mail->Username = $gmailUser;
-                            $mail->Password = $appPass;
-                            $mail->Port = 465;
-                            $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-                            $mail->CharSet = 'UTF-8';
-                            $mail->SMTPDebug = 0;
-                            $mail->Timeout = 30;
-                            $mail->setFrom($gmailUser, 'Digital Wallet');
-                            $mail->addAddress($userEmail);
-                            $mail->isHTML(true);
-                            $mail->Subject = $subject;
-                            $mail->Body = $htmlBody;
-                            $mail->AltBody = $altBody;
-                            $mail->send();
-                            $emailSent = true;
-                            error_log('[verification.php] Email sent successfully via port 465!');
-                        } catch (Throwable $e2) {
-                            error_log('[verification.php] Port 465 also failed: ' . $e2->getMessage());
-                            throw $e2; // Re-throw to be caught by outer catch
-                        }
+                        $emailError = $e1->getMessage();
                     }
                 } else {
                     if (!$userEmail) {
@@ -218,7 +181,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 error_log('[verification.php] Email exception: ' . $emailError);
             }
 
-            // Add email info to response (optional)
+            // Add email info to response
             $response["emailSent"] = $emailSent;
             if ($emailError) {
                 $response["emailError"] = $emailError;
