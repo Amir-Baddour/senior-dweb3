@@ -114,6 +114,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         // ✅ Send email notification to user
+        // ✅ Send email notification to user
         if ($response["status"] === "success") {
             error_log('[verification.php] Starting email process for user_id: ' . $user_id);
             
@@ -125,70 +126,48 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $userEmail = $user['email'] ?? null;
                 
                 error_log('[verification.php] User email: ' . ($userEmail ?: 'NULL'));
-                error_log('[verification.php] PHPMailer class exists: ' . (class_exists(\PHPMailer\PHPMailer\PHPMailer::class) ? 'YES' : 'NO'));
 
                 if ($userEmail && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
                     error_log('[verification.php] Attempting to send email...');
-                    $subject = "Verification Document Received";
                     
-                    // ✅ SIMPLIFIED plain text version (avoid Gmail spam filters)
-                    $plainBody = "Dear User,\n\nWe have received your verification document and it is now pending review by our team.\n\nYou will receive a notification once your verification has been processed.\n\nDocument: {$file_name}\nSubmitted: " . date('Y-m-d H:i:s') . "\n\nIf you did not submit this document, please contact support immediately.\n\nThank you!";
-
-                    $gmailUser = 'amirbaddour675@gmail.com';
-                    $appPass = 'lqtkykunvmmuhsvj';
-
-                    // Try 587 STARTTLS
-                    try {
-                        error_log('[verification.php] Trying SMTP port 587...');
-                        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-                        $mail->isSMTP();
-                        $mail->Host = 'smtp.gmail.com';
-                        $mail->SMTPAuth = true;
-                        $mail->Username = $gmailUser;
-                        $mail->Password = $appPass;
-                        $mail->Port = 587;
-                        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-                        $mail->CharSet = 'UTF-8';
-                        $mail->SMTPDebug = 2; // ✅ Enable debug
-                        $mail->Debugoutput = function($str, $level) {
-                            error_log("[PHPMailer DEBUG] $str");
-                        };
-                        $mail->Timeout = 30;
-                        $mail->setFrom($gmailUser, 'Digital Wallet');
-                        $mail->addAddress($userEmail);
-                        $mail->isHTML(false); // ✅ Plain text
-                        $mail->Subject = $subject;
-                        $mail->Body = $plainBody;
-                        $mail->send();
-                        $emailSent = true;
-                        error_log('[verification.php] Email sent successfully via port 587!');
-                    } catch (Throwable $e1) {
-                        error_log('[verification.php] Port 587 failed: ' . $e1->getMessage());
-                        $emailError = $e1->getMessage();
-                    }
+                    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+                    
+                    // Server settings
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = 'amirbaddour675@gmail.com';
+                    $mail->Password = 'lqtkykunvmmuhsvj';  // ⚠️ Check if this is still valid!
+                    $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = 587;
+                    
+                    // Recipients
+                    $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
+                    $mail->addAddress($userEmail);
+                    
+                    // Content
+                    $mail->isHTML(false);
+                    $mail->Subject = 'Verification Document Received';
+                    $mail->Body = "Your verification document has been received and is pending review.\n\nDocument: {$file_name}\nSubmitted: " . date('Y-m-d H:i:s');
+                    
+                    $mail->send();
+                    $emailSent = true;
+                    error_log('[verification.php] Email sent successfully!');
                 } else {
-                    if (!$userEmail) {
-                        $emailError = 'Missing recipient email';
-                        error_log('[verification.php] Email error: Missing recipient email');
-                    }
-                    if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-                        $emailError = 'PHPMailer not installed';
-                        error_log('[verification.php] Email error: PHPMailer not installed');
-                    }
+                    $emailError = !$userEmail ? 'Missing recipient email' : 'PHPMailer not installed';
+                    error_log('[verification.php] Email error: ' . $emailError);
                 }
             } catch (Throwable $e) {
                 $emailError = $e->getMessage();
                 error_log('[verification.php] Email exception: ' . $emailError);
             }
 
-            // Add email info to response
             $response["emailSent"] = $emailSent;
             if ($emailError) {
                 $response["emailError"] = $emailError;
             }
-            
-            error_log('[verification.php] Email process complete. Sent: ' . ($emailSent ? 'YES' : 'NO') . ', Error: ' . ($emailError ?: 'NONE'));
         }
+
     } else {
         $response["message"] = "File upload failed.";
     }
