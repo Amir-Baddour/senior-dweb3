@@ -18,17 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     menu.style.display = menu.style.display === "flex" ? "none" : "flex";
   }
 
-  /* Close menu when clicking outside */
-  document.addEventListener("click", function (e) {
-    const menu = document.getElementById("actionMenu");
-    const burger = document.querySelector(".burger-btn");
-
-    if (!menu || !burger) return;
-
-    if (!menu.contains(e.target) && !burger.contains(e.target)) {
-      menu.style.display = "none";
-    }
-  });
+  
 
   // ===== PROFILE =====
   if (
