@@ -102,20 +102,35 @@
           </div>
         </div>
         <div class="dashboard-header-actions">
-          <button
-            class="dashboard-deposit-btn"
-            onclick="window.location.href='deposit.html';"
-          >
-            Deposit
-          </button>
-          <button
-            class="dashboard-withdraw-btn"
-            onclick="window.location.href='withdraw.html';"
-          >
-            Withdraw
-          </button>
-        </div>
-      </header>
+  <!-- Desktop buttons -->
+  <div class="header-actions-desktop">
+    <button
+      class="dashboard-deposit-btn"
+      onclick="window.location.href='deposit.html';"
+    >
+      Deposit
+    </button>
+    <button
+      class="dashboard-withdraw-btn"
+      onclick="window.location.href='withdraw.html';"
+    >
+      Withdraw
+    </button>
+  </div>
+
+  <!-- Mobile burger -->
+  <div class="header-actions-mobile">
+    <button class="burger-btn" onclick="toggleActionMenu()">
+      <i class="fas fa-ellipsis-v"></i>
+    </button>
+
+    <div class="burger-menu" id="actionMenu">
+      <button onclick="window.location.href='deposit.html';">Deposit</button>
+      <button onclick="window.location.href='withdraw.html';">Withdraw</button>
+    </div>
+  </div>
+</div>
+
 
       <!-- Dashboard Widgets: Verification, Balance, and Limits -->
       <section class="dashboard-widgets">
