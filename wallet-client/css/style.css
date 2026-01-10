@@ -600,6 +600,106 @@
 }
 
 
+/* Dashboard Header Actions - Responsive */
+.dashboard-header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Desktop actions - visible by default */
+.desktop-actions {
+  display: flex;
+}
+
+/* Mobile actions - hidden by default */
+.mobile-actions {
+  display: none;
+  position: relative;
+}
+
+/* Burger menu button */
+.burger-menu-btn {
+  background: linear-gradient(135deg, #fcd535, #eab308);
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1e293b;
+}
+
+.burger-menu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(234, 179, 8, 0.4);
+}
+
+/* Dropdown menu for actions */
+.action-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+  z-index: 1000;
+}
+
+.action-dropdown.show {
+  display: flex;
+}
+
+.action-dropdown button {
+  width: 100%;
+  text-align: left;
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.action-dropdown button i {
+  font-size: 16px;
+}
+
+/* Media query for screens 525px and below */
+@media screen and (max-width: 525px) {
+  /* Hide desktop actions */
+  .desktop-actions {
+    display: none;
+  }
+  
+  /* Show mobile burger menu */
+  .mobile-actions {
+    display: block;
+  }
+}
+
+/* Additional responsive adjustments for dashboard header */
+@media screen and (max-width: 525px) {
+  .dashboard-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .dashboard-user {
+    width: 100%;
+  }
+  
+  .mobile-actions {
+    align-self: flex-end;
+  }
+}
 
 /*Assets page*/
 /* Container styling for balance + actions */
