@@ -18,8 +18,6 @@ document.addEventListener("DOMContentLoaded", function () {
     menu.style.display = menu.style.display === "flex" ? "none" : "flex";
   }
 
-  
-
   // ===== PROFILE =====
   if (
     document.querySelector(".dashboard-user-name") &&
@@ -310,4 +308,26 @@ document.addEventListener("DOMContentLoaded", function () {
         if (monthlyInfo) monthlyInfo.textContent = "0 / 5000";
       });
   }
+  // ===== BURGER MENU TOGGLE =====
+  function toggleActionMenu() {
+    const dropdown = document.getElementById("actionDropdown");
+    if (dropdown) {
+      dropdown.classList.toggle("show");
+    }
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", function (event) {
+    const dropdown = document.getElementById("actionDropdown");
+    const burgerBtn = document.querySelector(".burger-menu-btn");
+
+    if (dropdown && burgerBtn) {
+      if (
+        !dropdown.contains(event.target) &&
+        !burgerBtn.contains(event.target)
+      ) {
+        dropdown.classList.remove("show");
+      }
+    }
+  });
 });

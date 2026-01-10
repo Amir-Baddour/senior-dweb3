@@ -101,7 +101,8 @@
             <p class="dashboard-user-meta">VIP Level: Regular User</p>
           </div>
         </div>
-        <div class="dashboard-header-actions">
+        <!-- Desktop buttons -->
+        <div class="dashboard-header-actions desktop-actions">
           <button
             class="dashboard-deposit-btn"
             onclick="window.location.href='deposit.html';"
@@ -114,6 +115,31 @@
           >
             Withdraw
           </button>
+        </div>
+
+        <!-- Mobile burger menu -->
+        <div class="dashboard-header-actions mobile-actions">
+          <button
+            class="burger-menu-btn"
+            onclick="toggleActionMenu()"
+            aria-label="Menu"
+          >
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="action-dropdown" id="actionDropdown">
+            <button
+              class="dashboard-deposit-btn"
+              onclick="window.location.href='deposit.html';"
+            >
+              <i class="fas fa-plus-circle"></i> Deposit
+            </button>
+            <button
+              class="dashboard-withdraw-btn"
+              onclick="window.location.href='withdraw.html';"
+            >
+              <i class="fas fa-minus-circle"></i> Withdraw
+            </button>
+          </div>
         </div>
       </header>
 
