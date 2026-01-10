@@ -1,4 +1,25 @@
-// js/dashboard.js — COMPLETE FIXED VERSION
+// js/dashboard.js — WITH BURGER MENU TOGGLE
+
+// ===== BURGER MENU TOGGLE (Global function) =====
+function toggleActionMenu() {
+  const dropdown = document.getElementById("actionDropdown");
+  if (dropdown) {
+    dropdown.classList.toggle("show");
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener("click", function (event) {
+  const dropdown = document.getElementById("actionDropdown");
+  const burgerBtn = document.querySelector(".burger-menu-btn");
+  
+  if (dropdown && burgerBtn) {
+    if (!dropdown.contains(event.target) && !burgerBtn.contains(event.target)) {
+      dropdown.classList.remove("show");
+    }
+  }
+});
+
 document.addEventListener("DOMContentLoaded", function () {
   // ✅ Use config with fallback
   const API_BASE_URL =
@@ -13,10 +34,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
   const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
-  function toggleActionMenu() {
-    const menu = document.getElementById("actionMenu");
-    menu.style.display = menu.style.display === "flex" ? "none" : "flex";
-  }
 
   // ===== PROFILE =====
   if (
@@ -33,14 +50,12 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
-        // ✅ Handle both response.data.user and direct response.data formats
         const user = response.data?.user || response.data;
 
         if (user && !user.error) {
           const nameElem = document.querySelector(".dashboard-user-name");
           const metaElem = document.querySelector(".dashboard-user-meta");
 
-          // ✅ Build display name with priority: full_name, first_name + last_name, username, or email
           let displayName = "User";
 
           if (user.full_name && user.full_name.trim()) {
@@ -52,12 +67,11 @@ document.addEventListener("DOMContentLoaded", function () {
           } else if (user.username) {
             displayName = user.username;
           } else if (user.email) {
-            displayName = user.email.split("@")[0]; // Use email prefix if nothing else
+            displayName = user.email.split("@")[0];
           }
 
           if (nameElem) nameElem.textContent = displayName;
 
-          // ✅ Show tier instead of role
           const tierLabel =
             user.tier === "premium"
               ? "Premium User"
@@ -74,35 +88,24 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  // ===== VERIFICATION STATUS CHECK (Add this to your dashboard.js) =====
+  // ===== VERIFICATION STATUS CHECK =====
   if (document.getElementById("verificationWidget")) {
-    const API_BASE_URL =
-      window.APP_CONFIG?.API_BASE_URL ||
-      "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
-
-    const token = localStorage.getItem("jwt") || sessionStorage.getItem("jwt");
-    const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
-
     axios
       .get(`${API_BASE_URL}/get_verification_status.php`, axiosConfig)
       .then((response) => {
         console.log("[dashboard.js] Verification response:", response.data);
-        console.log("is_validated:", response.data.is_validated);
-        console.log("Type:", typeof response.data.is_validated);
 
         const data = response.data || {};
         const titleElem = document.getElementById("verificationTitle");
         const msgElem = document.getElementById("verificationMessage");
         const btnElem = document.getElementById("verificationButton");
 
-        // ✅ FIX: Handle all three states properly
         const validationStatus = parseInt(data.is_validated);
 
         if (validationStatus === 1) {
-          // ✅ APPROVED - Verified
           if (titleElem) {
             titleElem.textContent = "✓ Verified";
-            titleElem.style.color = "#10b981"; // Green
+            titleElem.style.color = "#10b981";
           }
           if (msgElem) {
             msgElem.textContent = "Your account is verified.";
@@ -110,10 +113,9 @@ document.addEventListener("DOMContentLoaded", function () {
           }
           if (btnElem) btnElem.style.display = "none";
         } else if (validationStatus === -1) {
-          // ❌ REJECTED
           if (titleElem) {
             titleElem.textContent = "❌ Verification Rejected";
-            titleElem.style.color = "#ef4444"; // Red
+            titleElem.style.color = "#ef4444";
           }
           if (msgElem) {
             const reason =
@@ -129,10 +131,9 @@ document.addEventListener("DOMContentLoaded", function () {
               (window.location.href = "verifications.html");
           }
         } else {
-          // ⏳ PENDING or NOT SUBMITTED (0 or null)
           if (titleElem) {
             titleElem.textContent = "⚠ Not Verified";
-            titleElem.style.color = "#f59e0b"; // Orange
+            titleElem.style.color = "#f59e0b";
           }
           if (msgElem) {
             msgElem.textContent =
@@ -151,7 +152,6 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch((error) => {
         console.error("Verification fetch error:", error);
 
-        // Show error state
         const titleElem = document.getElementById("verificationTitle");
         const msgElem = document.getElementById("verificationMessage");
 
@@ -166,6 +166,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
   }
+
   // ===== BALANCE =====
   const balanceAmountElem = document.getElementById("balanceAmount");
   if (balanceAmountElem) {
@@ -179,16 +180,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const data = response.data;
 
-        // ✅ Handle the actual API format: { success: true, balances: { USDT: 100 } }
         if (data.success && data.balances) {
           const balances = data.balances;
 
-          // Prefer USDT if available
           if (balances.USDT !== undefined) {
             return { amount: Number(balances.USDT), symbol: "USDT" };
           }
 
-          // Otherwise get the first available balance
           const entries = Object.entries(balances);
           if (entries.length > 0) {
             const [symbol, amount] = entries[0];
@@ -235,8 +233,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const data = response.data || {};
 
-        // ✅ Handle the actual API format
-        // API returns: { dailyUsed, dailyLimit, weeklyUsed, weeklyLimit, monthlyUsed, monthlyLimit }
         const dailyBar = document.getElementById("dailyBar");
         const dailyInfo = document.getElementById("dailyInfo");
         const weeklyBar = document.getElementById("weeklyBar");
@@ -244,21 +240,19 @@ document.addEventListener("DOMContentLoaded", function () {
         const monthlyBar = document.getElementById("monthlyBar");
         const monthlyInfo = document.getElementById("monthlyInfo");
 
-        // Helper function to set bar color based on usage percentage
         function setBarColor(bar, percentage) {
           if (!bar) return;
           if (percentage >= 90) {
-            bar.style.backgroundColor = "#ef4444"; // Red for 90%+
+            bar.style.backgroundColor = "#ef4444";
           } else if (percentage >= 70) {
-            bar.style.backgroundColor = "#f59e0b"; // Orange for 70-89%
+            bar.style.backgroundColor = "#f59e0b";
           } else if (percentage >= 50) {
-            bar.style.backgroundColor = "#eab308"; // Yellow for 50-69%
+            bar.style.backgroundColor = "#eab308";
           } else {
-            bar.style.backgroundColor = "#10b981"; // Green for 0-49%
+            bar.style.backgroundColor = "#10b981";
           }
         }
 
-        // Daily
         const dailyUsed = data.dailyUsed || 0;
         const dailyLimit = data.dailyLimit || 500;
         const dailyPct = dailyLimit > 0 ? (dailyUsed / dailyLimit) * 100 : 0;
@@ -269,7 +263,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (dailyInfo)
           dailyInfo.textContent = `${dailyUsed.toFixed(2)} / ${dailyLimit}`;
 
-        // Weekly
         const weeklyUsed = data.weeklyUsed || 0;
         const weeklyLimit = data.weeklyLimit || 2000;
         const weeklyPct =
@@ -281,7 +274,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (weeklyInfo)
           weeklyInfo.textContent = `${weeklyUsed.toFixed(2)} / ${weeklyLimit}`;
 
-        // Monthly
         const monthlyUsed = data.monthlyUsed || 0;
         const monthlyLimit = data.monthlyLimit || 5000;
         const monthlyPct =
@@ -298,7 +290,6 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch((error) => {
         console.error("Limits fetch error:", error);
 
-        // ✅ Show default limits on error
         const dailyInfo = document.getElementById("dailyInfo");
         const weeklyInfo = document.getElementById("weeklyInfo");
         const monthlyInfo = document.getElementById("monthlyInfo");
@@ -308,26 +299,4 @@ document.addEventListener("DOMContentLoaded", function () {
         if (monthlyInfo) monthlyInfo.textContent = "0 / 5000";
       });
   }
-  // ===== BURGER MENU TOGGLE =====
-  function toggleActionMenu() {
-    const dropdown = document.getElementById("actionDropdown");
-    if (dropdown) {
-      dropdown.classList.toggle("show");
-    }
-  }
-
-  // Close dropdown when clicking outside
-  document.addEventListener("click", function (event) {
-    const dropdown = document.getElementById("actionDropdown");
-    const burgerBtn = document.querySelector(".burger-menu-btn");
-
-    if (dropdown && burgerBtn) {
-      if (
-        !dropdown.contains(event.target) &&
-        !burgerBtn.contains(event.target)
-      ) {
-        dropdown.classList.remove("show");
-      }
-    }
-  });
 });
