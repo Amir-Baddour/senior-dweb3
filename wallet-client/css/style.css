@@ -599,44 +599,7 @@
   color: #fff;
 }
 
-/* Burger dropdown */
-.burger-menu {
-  position: absolute;
-  right: 0;
-  top: 40px;
-  background: #1e1e2f;
-  border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  display: none;
-  flex-direction: column;
-  min-width: 140px;
-  z-index: 100;
-}
 
-.burger-menu button {
-  background: none;
-  border: none;
-  padding: 12px;
-  text-align: left;
-  color: #fff;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.burger-menu button:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* ---------- Responsive breakpoint ---------- */
-@media (max-width: 525px) {
-  .header-actions-desktop {
-    display: none;
-  }
-
-  .header-actions-mobile {
-    display: block;
-  }
-}
 
 /*Assets page*/
 /* Container styling for balance + actions */
