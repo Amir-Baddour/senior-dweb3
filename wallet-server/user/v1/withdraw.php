@@ -1,15 +1,26 @@
 <?php
-// wallet-server/user/v1/withdraw.php  (DEV-FRIENDLY)
+// wallet-server/user/v1/withdraw.php  (DEV-FRIENDLY - FIXED)
 ob_start();
 
+$DEBUG = true; // ← set to false for production
+
 require_once __DIR__ . '/../../utils/cors.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+  http_response_code(204);
+  exit;
+}
+
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('display_errors', 0);
+
 function out($arr){ echo json_encode($arr, JSON_UNESCAPED_SLASHES); exit; }
 function derr($msg,$code=400,$extra=[]){ if ($code) http_response_code($code); out(array_merge(['error'=>$msg],$extra)); }
 
 // ---------- Includes ----------
 $phase = 'includes';
 try {
-  require_once __DIR__ . '/../../utils/cors.php';
   require_once __DIR__ . '/../../connection/db.php';
   require_once __DIR__ . '/../../models/WalletsModel.php';
   require_once __DIR__ . '/../../models/VerificationsModel.php';
@@ -26,7 +37,7 @@ try {
     error_log("PHPMailer autoload not found at: $autoload");
   }
 } catch (Throwable $e) {
-  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage()] : []);
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage(),'dev_trace'=>$e->getTraceAsString()] : []);
 }
 
 // ---------- Auth ----------
@@ -44,7 +55,7 @@ try {
   $userId = (int)$decoded['id'];
 
 } catch (Throwable $e) {
-  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage()] : []);
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage(),'dev_trace'=>$e->getTraceAsString()] : []);
 }
 
 // ---------- Input ----------
@@ -54,7 +65,7 @@ try {
   $amount = isset($data['amount']) ? (float)$data['amount'] : 0.0;
   if ($amount <= 0) derr('Invalid withdrawal amount');
 } catch (Throwable $e) {
-  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage()] : []);
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage(),'dev_trace'=>$e->getTraceAsString()] : []);
 }
 
 // ---------- Business logic ----------
@@ -72,8 +83,10 @@ try {
     derr('Your account is not verified. You cannot withdraw.');
   }
 
-  // Get user, tier and limits
+  // Get user first (before using it later)
   $user = $usersModel->getUserById($userId);
+  if (!$user) derr('User not found');
+  
   $tier = $user['tier'] ?? 'regular';
   $limits = $transactionLimitsModel->getTransactionLimitByTier($tier);
   if (!$limits) derr('Transaction limits not defined for your tier');
@@ -124,11 +137,11 @@ try {
   $newBalance = (float)$wallet['balance'] - $amount;
   $walletsModel->updateBalance($userId, 'USDT', $newBalance);
 
-  // Record the withdrawal transaction (keep your existing signature)
+  // Record the withdrawal transaction
   $transactionsModel->create($userId, null, 'withdrawal', $amount);
 
 } catch (Throwable $e) {
-  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage()] : []);
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage(),'dev_trace'=>$e->getTraceAsString()] : []);
 }
 
 // ---------- Email (non-fatal) ----------
@@ -171,9 +184,6 @@ try {
       $mail->Subject = $subject;
       $mail->Body    = $htmlBody;
       $mail->AltBody = $altBody;
-      // Debug if needed:
-      // $mail->SMTPDebug   = 2;
-      // $mail->Debugoutput = function($s){ error_log('PHPMailer: '.trim($s)); };
       $mail->send();
       $emailSent = true;
     } catch (Throwable $e1) {
@@ -214,6 +224,6 @@ out([
   'newBalance' => (float)$newBalance,
   'message'    => 'Withdrawal successful',
   'emailSent'  => (bool)$emailSent,
-  'emailError' => $emailError,     // optional (remove for prod)
+  'emailError' => $emailError,
   'dev_phase'  => $DEBUG ? $phase : null
 ]);
