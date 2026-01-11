@@ -18,9 +18,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      // ✅ FIXED: Correct endpoint path
+      // ✅ FIXED: Don't duplicate /user/v1 if already in base URL
+      const endpoint = API_BASE_URL.includes('/user/v1') 
+        ? `${API_BASE_URL}/withdraw.php`
+        : `${API_BASE_URL}/user/v1/withdraw.php`;
+      
       axios.post(
-        `${API_BASE_URL}/user/v1/withdraw.php`,
+        endpoint,
         { amount: withdrawAmount },
         { headers: { 'Authorization': `Bearer ${token}` } }
       )
