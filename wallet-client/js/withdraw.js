@@ -1,32 +1,32 @@
-document.addEventListener('DOMContentLoait', function() {
-  const { API_BASE_URL } = window.APP_CONFIG; // ✅ Get dynamic base URL
+document.addEventListener('DOMContentLoaded', function() {
+  const { API_BASE_URL } = window.APP_CONFIG;
   const form = document.getElementById('withdrawForm');
 
   if (form) {
     form.addEventListener('submit', function(e) {
       e.preventDefault();
 
-      // Check authentication: redirect if no JWT is found
       const token = localStorage.getItem('jwt');
       if (!token) {
         window.location.href = 'login.html';
         return;
       }
 
-      // Validate withdrawal amount
       const withdrawAmount = parseFloat(document.getElementById('withdrawAmount').value);
       if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
         alert("Please enter a valid withdrawal amount.");
         return;
       }
 
-      // ✅ Use dynamic base URL instead of localhost
+      // ✅ FIXED: Correct endpoint path
       axios.post(
-        `${API_BASE_URL}/withdraw.php`,
+        `${API_BASE_URL}/user/v1/withdraw.php`,
         { amount: withdrawAmount },
         { headers: { 'Authorization': `Bearer ${token}` } }
       )
       .then(function(response) {
+        console.log('Response:', response.data);
+        
         if (response.data.error) {
           alert("Withdrawal error: " + response.data.error);
         } else {
@@ -42,8 +42,16 @@ document.addEventListener('DOMContentLoait', function() {
         }
       })
       .catch(function(error) {
-        console.error("Error during withdrawal:", error);
-        alert("Unexpected error during withdrawal.");
+        console.error("Error:", error);
+        
+        if (error.response) {
+          alert("Withdrawal failed: " + (error.response.data.error || error.response.statusText));
+          console.error('Server response:', error.response.data);
+        } else if (error.request) {
+          alert("Network error: Unable to connect to server.");
+        } else {
+          alert("Unexpected error during withdrawal.");
+        }
       });
     });
   }

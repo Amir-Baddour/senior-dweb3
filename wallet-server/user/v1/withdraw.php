@@ -1,8 +1,8 @@
 <?php
-// wallet-server/user/v1/withdraw.php  (DEV-FRIENDLY - FIXED)
+// wallet-server/user/v1/withdraw.php
 ob_start();
 
-$DEBUG = true; // ← set to false for production
+$DEBUG = true;
 
 require_once __DIR__ . '/../../utils/cors.php';
 
@@ -15,8 +15,16 @@ error_reporting(E_ALL);
 ini_set('log_errors', 1);
 ini_set('display_errors', 0);
 
-function out($arr){ echo json_encode($arr, JSON_UNESCAPED_SLASHES); exit; }
-function derr($msg,$code=400,$extra=[]){ if ($code) http_response_code($code); out(array_merge(['error'=>$msg],$extra)); }
+function out($arr) {
+  ob_end_clean();
+  echo json_encode($arr, JSON_UNESCAPED_SLASHES);
+  exit;
+}
+
+function derr($msg, $code = 400, $extra = []) {
+  if ($code) http_response_code($code);
+  out(array_merge(['error' => $msg], $extra));
+}
 
 // ---------- Includes ----------
 $phase = 'includes';
@@ -29,15 +37,12 @@ try {
   require_once __DIR__ . '/../../models/TransactionLimitsModel.php';
   require_once __DIR__ . '/../../utils/verify_jwt.php';
 
-  // PHPMailer autoload (project root/vendor) — from user/v1 go up 3 levels
   $autoload = __DIR__ . '/../../../vendor/autoload.php';
   if (file_exists($autoload)) {
     require_once $autoload;
-  } else {
-    error_log("PHPMailer autoload not found at: $autoload");
   }
 } catch (Throwable $e) {
-  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage(),'dev_trace'=>$e->getTraceAsString()] : []);
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase' => $phase, 'dev_error' => $e->getMessage()] : []);
 }
 
 // ---------- Auth ----------
@@ -48,50 +53,46 @@ try {
   [$bearer, $jwt] = array_pad(explode(' ', $auth, 2), 2, null);
   if ($bearer !== 'Bearer' || empty($jwt)) derr('Invalid or missing Authorization header', 401);
 
-  // MUST match the secret used when generating your JWT at login/google-oauth
   $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY";
   $decoded = verify_jwt($jwt, $jwt_secret);
   if (!$decoded) derr('Invalid or expired token', 401);
   $userId = (int)$decoded['id'];
 
 } catch (Throwable $e) {
-  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage(),'dev_trace'=>$e->getTraceAsString()] : []);
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase' => $phase, 'dev_error' => $e->getMessage()] : []);
 }
 
 // ---------- Input ----------
 $phase = 'input';
 try {
-  $data   = json_decode(file_get_contents("php://input"), true) ?: [];
+  $data = json_decode(file_get_contents("php://input"), true) ?: [];
   $amount = isset($data['amount']) ? (float)$data['amount'] : 0.0;
   if ($amount <= 0) derr('Invalid withdrawal amount');
 } catch (Throwable $e) {
-  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage(),'dev_trace'=>$e->getTraceAsString()] : []);
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase' => $phase, 'dev_error' => $e->getMessage()] : []);
 }
 
 // ---------- Business logic ----------
 $phase = 'withdraw';
 try {
-  $walletsModel       = new WalletsModel();
+  $walletsModel = new WalletsModel();
   $verificationsModel = new VerificationsModel();
-  $transactionsModel  = new TransactionsModel();
-  $usersModel         = new UsersModel();
+  $transactionsModel = new TransactionsModel();
+  $usersModel = new UsersModel();
   $transactionLimitsModel = new TransactionLimitsModel();
 
-  // Ensure the user is verified
   $verification = $verificationsModel->getVerificationByUserId($userId);
   if (!$verification || (int)$verification['is_validated'] !== 1) {
     derr('Your account is not verified. You cannot withdraw.');
   }
 
-  // Get user first (before using it later)
   $user = $usersModel->getUserById($userId);
   if (!$user) derr('User not found');
-  
+
   $tier = $user['tier'] ?? 'regular';
   $limits = $transactionLimitsModel->getTransactionLimitByTier($tier);
   if (!$limits) derr('Transaction limits not defined for your tier');
 
-  // Calculate current usage for daily, weekly, and monthly (using PDO $conn)
   global $conn;
   $dailyStmt = $conn->prepare("
       SELECT COALESCE(SUM(amount), 0) AS total 
@@ -124,12 +125,10 @@ try {
   $monthlyStmt->execute(['user_id' => $userId]);
   $monthlyTotal = (float)$monthlyStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-  // Check limits with new withdrawal
-  if (($dailyTotal + $amount)   > (float)$limits['daily_limit'])   derr('Daily withdrawal limit exceeded');
-  if (($weeklyTotal + $amount)  > (float)$limits['weekly_limit'])  derr('Weekly withdrawal limit exceeded');
+  if (($dailyTotal + $amount) > (float)$limits['daily_limit']) derr('Daily withdrawal limit exceeded');
+  if (($weeklyTotal + $amount) > (float)$limits['weekly_limit']) derr('Weekly withdrawal limit exceeded');
   if (($monthlyTotal + $amount) > (float)$limits['monthly_limit']) derr('Monthly withdrawal limit exceeded');
 
-  // Verify wallet balance and update
   $wallet = $walletsModel->getWalletByUserAndCoin($userId, 'USDT');
   if (!$wallet) derr('Wallet not found');
   if ((float)$wallet['balance'] < $amount) derr('Insufficient funds');
@@ -137,52 +136,49 @@ try {
   $newBalance = (float)$wallet['balance'] - $amount;
   $walletsModel->updateBalance($userId, 'USDT', $newBalance);
 
-  // Record the withdrawal transaction
   $transactionsModel->create($userId, null, 'withdrawal', $amount);
 
 } catch (Throwable $e) {
-  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase'=>$phase,'dev_error'=>$e->getMessage(),'dev_trace'=>$e->getTraceAsString()] : []);
+  derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase' => $phase, 'dev_error' => $e->getMessage()] : []);
 }
 
 // ---------- Email (non-fatal) ----------
 $phase = 'email';
-$emailSent  = false;
+$emailSent = false;
 $emailError = null;
 try {
   $userEmail = $user['email'] ?? null;
   if ($userEmail && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
     $fmtAmount = number_format($amount, 2, '.', '');
-    $fmtBal    = number_format($newBalance, 2, '.', '');
-    $subject   = "Withdrawal Confirmation";
-    $htmlBody  = "
+    $fmtBal = number_format($newBalance, 2, '.', '');
+    $subject = "Withdrawal Confirmation";
+    $htmlBody = "
       <h2>Withdrawal Successful</h2>
       <p>You have withdrawn <strong>{$fmtAmount} USDT</strong> from your wallet.</p>
       <p>Your new balance is <strong>{$fmtBal} USDT</strong>.</p>
       <hr>
       <p>If you did not make this transaction, please contact support immediately.</p>
     ";
-    $altBody   = "Withdrawal {$fmtAmount} USDT. New balance: {$fmtBal} USDT.";
+    $altBody = "Withdrawal {$fmtAmount} USDT. New balance: {$fmtBal} USDT.";
 
-    // Your Gmail + App Password (no spaces)
     $gmailUser = 'amirbaddour675@gmail.com';
-    $appPass   = 'lqtkykunvmmuhsvj';
+    $appPass = 'lqtkykunvmmuhsvj';
 
-    // Try STARTTLS/587, then fallback to SMTPS/465
     try {
       $mail = new PHPMailer\PHPMailer\PHPMailer(true);
       $mail->isSMTP();
-      $mail->Host       = 'smtp.gmail.com';
-      $mail->SMTPAuth   = true;
-      $mail->Username   = $gmailUser;
-      $mail->Password   = $appPass;
-      $mail->Port       = 587;
+      $mail->Host = 'smtp.gmail.com';
+      $mail->SMTPAuth = true;
+      $mail->Username = $gmailUser;
+      $mail->Password = $appPass;
+      $mail->Port = 587;
       $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-      $mail->CharSet    = 'UTF-8';
+      $mail->CharSet = 'UTF-8';
       $mail->setFrom($gmailUser, 'Digital Wallet');
       $mail->addAddress($userEmail);
       $mail->isHTML(true);
       $mail->Subject = $subject;
-      $mail->Body    = $htmlBody;
+      $mail->Body = $htmlBody;
       $mail->AltBody = $altBody;
       $mail->send();
       $emailSent = true;
@@ -190,18 +186,18 @@ try {
       try {
         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
         $mail->isSMTP();
-        $mail->Host       = 'smtp.gmail.com';
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $gmailUser;
-        $mail->Password   = $appPass;
-        $mail->Port       = 465;
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = $gmailUser;
+        $mail->Password = $appPass;
+        $mail->Port = 465;
         $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-        $mail->CharSet    = 'UTF-8';
+        $mail->CharSet = 'UTF-8';
         $mail->setFrom($gmailUser, 'Digital Wallet');
         $mail->addAddress($userEmail);
         $mail->isHTML(true);
         $mail->Subject = $subject;
-        $mail->Body    = $htmlBody;
+        $mail->Body = $htmlBody;
         $mail->AltBody = $altBody;
         $mail->send();
         $emailSent = true;
@@ -222,8 +218,8 @@ try {
 // ---------- Success ----------
 out([
   'newBalance' => (float)$newBalance,
-  'message'    => 'Withdrawal successful',
-  'emailSent'  => (bool)$emailSent,
+  'message' => 'Withdrawal successful',
+  'emailSent' => (bool)$emailSent,
   'emailError' => $emailError,
-  'dev_phase'  => $DEBUG ? $phase : null
+  'dev_phase' => $DEBUG ? $phase : null
 ]);
