@@ -16,7 +16,8 @@ const API_BASE = (() => {
     return "http://localhost/digital-wallet-plateform/wallet-server/user/v1";
 
   // ✅ PRODUCTION FALLBACK: Current Cloudflare Tunnel
-return "https://templates-bridge-michelle-ranked.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";})();
+  return "https://templates-bridge-michelle-ranked.trycloudflare.com/digital-wallet-plateform/wallet-server/user/v1";
+})();
 console.log("[login.js] EFFECTIVE API_BASE =", API_BASE);
 
 // safety: don't allow prod to hit localhost API
@@ -69,6 +70,10 @@ function showError(msg) {
   alert(msg || "An error occurred. Please try again.");
 }
 
+function showInfo(msg) {
+  alert(msg);
+}
+
 function extractErr(err, fallback = "Request failed") {
   return (
     err?.response?.data?.message ||
@@ -77,6 +82,31 @@ function extractErr(err, fallback = "Request failed") {
     fallback
   );
 }
+
+/* =========================
+   Listen for verification completion from popup
+========================= */
+window.addEventListener("message", function (event) {
+  // Accept messages from any origin for development
+  // In production, verify event.origin matches your domain
+  
+  if (event.data && event.data.type === "login_verified") {
+    console.log("[login.js] Received login verification from popup");
+    
+    const { token, user } = event.data;
+    if (token && user) {
+      saveSession(token, user);
+      
+      // Show success message
+      showInfo("Login verified successfully! Redirecting to dashboard...");
+      
+      // Redirect after a short delay
+      setTimeout(() => {
+        redirectToDashboard();
+      }, 1000);
+    }
+  }
+});
 
 /* =========================
    Email/Password login
@@ -108,12 +138,39 @@ function extractErr(err, fallback = "Request failed") {
       const resp = await http.post(ROUTES.passwordLogin, formData);
       const data = resp?.data || {};
 
+      // ✅ Handle successful login (immediate)
       if (data.status === "success" && data.token && data.user) {
         saveSession(data.token, data.user);
         redirectToDashboard();
         return;
       }
 
+      // ✅ Handle pending email verification
+      if (data.status === "pending_verification") {
+        showInfo(
+          data.message ||
+            "A verification email has been sent. Please check your inbox and click the verification link to complete login."
+        );
+        
+        // Update button to show verification pending
+        if (submitBtn) {
+          submitBtn.textContent = "Verification Email Sent";
+          submitBtn.style.backgroundColor = "#ff9800";
+        }
+        
+        // Reset button after 5 seconds
+        setTimeout(() => {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Login";
+            submitBtn.style.backgroundColor = "";
+          }
+        }, 5000);
+        
+        return;
+      }
+
+      // Handle other responses
       showError(
         data.message || "Login failed. Check your credentials and try again."
       );
@@ -121,7 +178,8 @@ function extractErr(err, fallback = "Request failed") {
       console.error("[login.js] Login error:", err);
       showError(extractErr(err, "Login error"));
     } finally {
-      if (submitBtn) {
+      // Only reset if not pending verification
+      if (submitBtn && submitBtn.textContent !== "Verification Email Sent") {
         submitBtn.disabled = false;
         submitBtn.textContent = "Login";
       }
