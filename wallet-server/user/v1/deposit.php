@@ -118,20 +118,21 @@ try {
     $altBody   = "Deposit {$fmtAmount} USDT. New balance: {$fmtBal} USDT.";
 
     // ✅ BREVO SMTP CONFIGURATION (300 emails/day FREE)
-    $brevoLogin    = '9f9f14001@smtp-brevo.com';    // From your screenshot
-    $brevoPassword = 'RkWndDBs7phYKfG2';             // From your screenshot
+    $brevoLogin    = '9f9f14001@smtp-brevo.com';
+    $brevoPassword = 'RkWndDBs7phYKfG2';
 
     $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    $mail->SMTPDebug = 0; // Set to 2 for debugging
     $mail->isSMTP();
-    $mail->Host       = 'smtp-relay.brevo.com';      // Brevo SMTP server
+    $mail->Host       = 'smtp-relay.brevo.com';
     $mail->SMTPAuth   = true;
-    $mail->Username   = $brevoLogin;                 // Your Brevo login
-    $mail->Password   = $brevoPassword;              // Your Brevo password
+    $mail->Username   = $brevoLogin;
+    $mail->Password   = $brevoPassword;
     $mail->Port       = 587;
     $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
     $mail->CharSet    = 'UTF-8';
     
-    $mail->setFrom('9f9f14001@smtp-brevo.com', 'Digital Wallet');
+    $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
     $mail->addAddress($userEmail);
     $mail->isHTML(true);
     $mail->Subject = $subject;
@@ -140,6 +141,7 @@ try {
     
     $mail->send();
     $emailSent = true;
+    error_log("✅ Email sent successfully to: " . $userEmail);
   } else {
     if (!$userEmail) $emailError = 'Missing recipient email';
     if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) $emailError = 'PHPMailer not installed';
