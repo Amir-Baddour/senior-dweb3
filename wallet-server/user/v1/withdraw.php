@@ -1,12 +1,11 @@
 <?php
-// wallet-server/user/v1/withdraw.php
+// wallet-server/user/v1/withdraw.php (Using Brevo SMTP - 300 emails/day FREE)
 ob_start();
 
 $DEBUG = true;
 
 require_once __DIR__ . '/../../utils/cors.php';
 
-// Handle OPTIONS preflight request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   header('Access-Control-Allow-Origin: https://yourwallet0.vercel.app');
   header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
@@ -16,7 +15,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   exit;
 }
 
-// Set CORS headers for actual request
 header('Access-Control-Allow-Origin: https://yourwallet0.vercel.app');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
@@ -47,10 +45,9 @@ try {
   require_once __DIR__ . '/../../models/TransactionLimitsModel.php';
   require_once __DIR__ . '/../../utils/verify_jwt.php';
 
+  // ✅ Need autoload for PHPMailer
   $autoload = __DIR__ . '/../../../vendor/autoload.php';
-  if (file_exists($autoload)) {
-    require_once $autoload;
-  }
+  if (file_exists($autoload)) require_once $autoload;
 } catch (Throwable $e) {
   derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase' => $phase, 'dev_error' => $e->getMessage()] : []);
 }
@@ -152,12 +149,13 @@ try {
   derr('Server error. Please try again later.', 500, $DEBUG ? ['dev_phase' => $phase, 'dev_error' => $e->getMessage()] : []);
 }
 
-// ---------- Email (non-fatal) ----------
+// ---------- Email via Brevo SMTP (non-fatal) ----------
 $phase = 'email';
 $emailSent = false;
 $emailError = null;
 try {
   $userEmail = $user['email'] ?? null;
+
   if ($userEmail && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
     $fmtAmount = number_format($amount, 2, '.', '');
     $fmtBal = number_format($newBalance, 2, '.', '');
@@ -171,51 +169,29 @@ try {
     ";
     $altBody = "Withdrawal {$fmtAmount} USDT. New balance: {$fmtBal} USDT.";
 
-    $gmailUser = 'amirbaddour675@gmail.com';
-    $appPass = 'lqtkykunvmmuhsvj';
+    // ✅ BREVO SMTP CONFIGURATION (300 emails/day FREE)
+    $brevoLogin    = '9f9f14001@smtp-brevo.com';
+    $brevoPassword = 'RkWndDBs7phYKfG2';
 
-    try {
-      $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-      $mail->isSMTP();
-      $mail->Host = 'smtp.gmail.com';
-      $mail->SMTPAuth = true;
-      $mail->Username = $gmailUser;
-      $mail->Password = $appPass;
-      $mail->Port = 587;
-      $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-      $mail->CharSet = 'UTF-8';
-      $mail->setFrom($gmailUser, 'Digital Wallet');
-      $mail->addAddress($userEmail);
-      $mail->isHTML(true);
-      $mail->Subject = $subject;
-      $mail->Body = $htmlBody;
-      $mail->AltBody = $altBody;
-      $mail->send();
-      $emailSent = true;
-    } catch (Throwable $e1) {
-      try {
-        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-        $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com';
-        $mail->SMTPAuth = true;
-        $mail->Username = $gmailUser;
-        $mail->Password = $appPass;
-        $mail->Port = 465;
-        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-        $mail->CharSet = 'UTF-8';
-        $mail->setFrom($gmailUser, 'Digital Wallet');
-        $mail->addAddress($userEmail);
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body = $htmlBody;
-        $mail->AltBody = $altBody;
-        $mail->send();
-        $emailSent = true;
-      } catch (Throwable $e2) {
-        $emailError = $e2->getMessage();
-        error_log('withdraw email error: ' . $emailError);
-      }
-    }
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    $mail->isSMTP();
+    $mail->Host       = 'smtp-relay.brevo.com';
+    $mail->SMTPAuth   = true;
+    $mail->Username   = $brevoLogin;
+    $mail->Password   = $brevoPassword;
+    $mail->Port       = 587;
+    $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->CharSet    = 'UTF-8';
+    
+    $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
+    $mail->addAddress($userEmail);
+    $mail->isHTML(true);
+    $mail->Subject = $subject;
+    $mail->Body    = $htmlBody;
+    $mail->AltBody = $altBody;
+    
+    $mail->send();
+    $emailSent = true;
   } else {
     if (!$userEmail) $emailError = 'Missing recipient email';
     if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) $emailError = 'PHPMailer not installed';
