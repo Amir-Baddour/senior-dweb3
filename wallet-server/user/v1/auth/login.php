@@ -1,6 +1,8 @@
 <?php
 
 ob_start();
+session_start(); // Start session at the beginning
+
 require_once __DIR__ . '/../../../utils/cors.php';
 require_once __DIR__ . '/../../../connection/db.php';
 require_once __DIR__ . '/../../../models/UsersModel.php';
@@ -120,8 +122,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $login_verification_token = bin2hex(random_bytes(32));
                     $token_expiry = time() + (15 * 60); // 15 minutes
                     
-                    // Store the pending login in session or temporary storage
-                    session_start();
+                    // Store the pending login in session
                     $_SESSION['pending_login'] = [
                         'user_id' => $user['id'],
                         'email' => $user['email'],
@@ -141,7 +142,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             "email" => $email
                         ];
                     } else {
-                        $response["message"] = "Failed to send verification email. Please try again.";
+                        $response = [
+                            "status" => "error",
+                            "message" => "Failed to send verification email. Please try again."
+                        ];
                     }
                 }
             } else {
@@ -155,5 +159,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
+// Set JSON header
+header('Content-Type: application/json');
 echo json_encode($response);
 ?>
