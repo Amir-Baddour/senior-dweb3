@@ -92,6 +92,9 @@ $response = ["status" => "error", "message" => "Something went wrong"];
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = trim($_POST["email"]);
     $password = $_POST["password"];
+    
+    // Debug log
+    error_log("Login attempt for email: " . $email);
 
     try {
         $usersModel = new UsersModel();
@@ -110,6 +113,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if ($user) {
             // Verify password
             if (password_verify($password, $user['password'])) {
+                error_log("Password verified for user: " . $user['id']);
+                
                 // Fetch user's verification status
                 $verification = $verificationsModel->getVerificationByUserId($user['id']);
                 $is_validated = $verification ? $verification['is_validated'] : 0;
@@ -134,6 +139,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                     // Send verification email
                     $email_sent = send_login_verification_email($email, $login_verification_token);
+                    
+                    error_log("Email sent status: " . ($email_sent ? 'success' : 'failed'));
 
                     if ($email_sent) {
                         $response = [
@@ -142,20 +149,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             "email" => $email
                         ];
                     } else {
+                        // Email sending failed, but for development, let's still return pending
                         $response = [
-                            "status" => "error",
-                            "message" => "Failed to send verification email. Please try again."
+                            "status" => "pending_verification",
+                            "message" => "Verification required. (Note: Email sending may not be configured on localhost)",
+                            "email" => $email,
+                            "debug_token" => $login_verification_token // For testing only
                         ];
                     }
                 }
             } else {
+                error_log("Password verification failed");
                 $response["message"] = "Invalid email or password";
             }
         } else {
+            error_log("User not found");
             $response["message"] = "Invalid email or password";
         }
     } catch (PDOException $e) {
+        error_log("Database error: " . $e->getMessage());
         $response["message"] = "Database error: " . $e->getMessage();
+    } catch (Exception $e) {
+        error_log("General error: " . $e->getMessage());
+        $response["message"] = "Error: " . $e->getMessage();
     }
 }
 

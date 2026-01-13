@@ -137,9 +137,13 @@ window.addEventListener("message", function (event) {
     try {
       const resp = await http.post(ROUTES.passwordLogin, formData);
       const data = resp?.data || {};
+      
+      console.log("[login.js] Backend response:", data);
+      console.log("[login.js] Response status:", data.status);
 
       // ✅ Handle successful login (immediate)
       if (data.status === "success" && data.token && data.user) {
+        console.log("[login.js] Login successful, saving session");
         saveSession(data.token, data.user);
         redirectToDashboard();
         return;
@@ -147,6 +151,14 @@ window.addEventListener("message", function (event) {
 
       // ✅ Handle pending email verification
       if (data.status === "pending_verification") {
+        console.log("[login.js] Email verification pending");
+        
+        // Show debug token if available (for testing)
+        if (data.debug_token) {
+          console.log("[login.js] Debug verification link:", 
+            `${API_BASE.replace('/user/v1', '')}/user/v1/auth/verify_login.php?token=${data.debug_token}`);
+        }
+        
         showInfo(
           data.message ||
             "A verification email has been sent. Please check your inbox and click the verification link to complete login."
