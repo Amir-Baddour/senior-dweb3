@@ -17,7 +17,7 @@
     API_BASE_URL = `http://localhost${basePath}`;
   } else if (isVercel) {
     // ✅ UPDATED: New tunnel URL pointing to port 80
-    API_BASE_URL = ` https://refined-tampa-understand-seed.trycloudflare.com${basePath}`;
+    API_BASE_URL = `https://toolbox-keyboard-june-tall.trycloudflare.com${basePath}`;
   } else if (isCloudflare) {
     // ✅ When on Cloudflare tunnel, use same origin
     API_BASE_URL = `${location.origin}${basePath}`;
