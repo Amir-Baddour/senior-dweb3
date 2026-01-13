@@ -79,20 +79,48 @@ function openVerificationLink(verificationUrl) {
   );
   
   if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-    console.warn("[login.js] Popup blocked, opening in current tab");
+    console.warn("[login.js] ⚠️ Popup blocked, redirecting to verification page...");
+    // If popup is blocked, just redirect the main window
     window.location.href = verificationUrl;
-  } else {
-    console.log("[login.js] ✓ Verification popup opened successfully");
-    console.log("[login.js] ⏳ Waiting for verification...");
-    
-    // Monitor popup
-    const checkPopup = setInterval(() => {
-      if (popup.closed) {
-        console.log("[login.js] Popup was closed");
-        clearInterval(checkPopup);
-      }
-    }, 500);
+    return;
   }
+  
+  console.log("[login.js] ✓ Verification popup opened successfully");
+  console.log("[login.js] ⏳ Waiting for verification message...");
+  
+  let messageReceived = false;
+  
+  // Listen for message from popup
+  const messageHandler = (event) => {
+    if (event.data && event.data.type === "login_verified") {
+      messageReceived = true;
+      console.log("[login.js] 🎉 Message received from popup!");
+    }
+  };
+  
+  window.addEventListener("message", messageHandler);
+  
+  // Monitor popup
+  const checkPopup = setInterval(() => {
+    if (popup.closed) {
+      console.log("[login.js] Popup was closed");
+      clearInterval(checkPopup);
+      window.removeEventListener("message", messageHandler);
+      
+      // If popup closed but we didn't receive the message
+      if (!messageReceived) {
+        console.warn("[login.js] ⚠️ Popup closed but no message received!");
+        console.log("[login.js] 🔄 Redirecting to verification page instead...");
+        
+        // Wait a bit in case message is delayed
+        setTimeout(() => {
+          if (!messageReceived) {
+            window.location.href = verificationUrl;
+          }
+        }, 1000);
+      }
+    }
+  }, 500);
 }
 
 // Custom modal for verification message
@@ -195,7 +223,12 @@ function showVerificationModal(email, emailSent, verificationUrl) {
 
 // Listen for verification completion from popup
 window.addEventListener("message", function (event) {
-  console.log("[login.js] Received message:", event.data);
+  // Filter out browser extension noise (MetaMask, etc.)
+  if (event.data && (event.data.target || event.data.iframeId)) {
+    return; // Ignore extension messages
+  }
+  
+  console.log("[login.js] 📨 Received message:", event.data);
   
   // Security: Only accept messages from expected origins
   const allowedOrigins = [
@@ -209,12 +242,14 @@ window.addEventListener("message", function (event) {
   );
   
   if (!isAllowedOrigin) {
-    console.warn("[login.js] Message from untrusted origin:", event.origin);
+    console.warn("[login.js] ⚠️ Message from untrusted origin:", event.origin);
     return;
   }
   
   if (event.data && event.data.type === "login_verified") {
-    console.log("[login.js] ✅ Login verified via popup!");
+    console.log("[login.js] ✅ LOGIN VERIFIED VIA POPUP!");
+    console.log("[login.js] 📦 Token received:", event.data.token ? "YES" : "NO");
+    console.log("[login.js] 👤 User data:", event.data.user);
     
     const { token, user } = event.data;
     if (token && user) {
@@ -230,6 +265,8 @@ window.addEventListener("message", function (event) {
       setTimeout(() => {
         redirectToDashboard();
       }, 1000);
+    } else {
+      console.error("[login.js] ❌ Missing token or user data!");
     }
   }
 }, false);
