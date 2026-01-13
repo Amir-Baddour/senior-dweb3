@@ -2,7 +2,7 @@
 
 // Clean output buffer and start fresh
 ob_start();
-session_start(); // Start session at the beginning
+session_start();
 
 require_once __DIR__ . '/../../../utils/cors.php';
 require_once __DIR__ . '/../../../connection/db.php';
@@ -14,8 +14,7 @@ ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 /**
- * Generate a simple JWT (for demonstration purposes).
- * In production, consider using firebase/php-jwt.
+ * Generate a simple JWT
  */
 function generate_jwt(array $payload, string $secret, int $expiry_in_seconds = 3600): string
 {
@@ -37,10 +36,30 @@ function generate_jwt(array $payload, string $secret, int $expiry_in_seconds = 3
 }
 
 /**
+ * Store pending login in a file (for cross-domain compatibility)
+ */
+function store_pending_login($token, $data) {
+    $dir = sys_get_temp_dir() . '/pending_logins';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+    
+    $file = $dir . '/' . $token . '.json';
+    file_put_contents($file, json_encode($data));
+    
+    // Clean up old files (older than 20 minutes)
+    foreach (glob($dir . '/*.json') as $oldFile) {
+        if (filemtime($oldFile) < time() - 1200) {
+            unlink($oldFile);
+        }
+    }
+}
+
+/**
  * Send login verification email
  */
-function send_login_verification_email($email, $verification_token) {
-    $verification_link = "http://localhost/digital-wallet-plateform/wallet-server/user/v1/auth/verify_login.php?token=" . urlencode($verification_token);
+function send_login_verification_email($email, $verification_token, $base_url) {
+    $verification_link = $base_url . "/auth/verify_login.php?token=" . urlencode($verification_token);
     
     $subject = "Login Verification - Is this you?";
     $message = "
@@ -87,11 +106,9 @@ function send_login_verification_email($email, $verification_token) {
     $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
     $headers .= "From: noreply@digitalwallet.com" . "\r\n";
 
-    // Suppress mail errors for development
     return @mail($email, $subject, $message, $headers);
 }
 
-// Replace with your secure secret key
 $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY";
 $response = ["status" => "error", "message" => "Something went wrong"];
 
@@ -99,14 +116,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = trim($_POST["email"]);
     $password = $_POST["password"];
     
-    // Debug log
     error_log("Login attempt for email: " . $email);
 
     try {
         $usersModel = new UsersModel();
         $verificationsModel = new VerificationsModel();
 
-        // Lookup user by email
         $allUsers = $usersModel->getAllUsers();
         $user = null;
         foreach ($allUsers as $u) {
@@ -117,52 +132,47 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         if ($user) {
-            // Verify password
             if (password_verify($password, $user['password'])) {
                 error_log("Password verified for user: " . $user['id']);
                 
-                // Fetch user's verification status
                 $verification = $verificationsModel->getVerificationByUserId($user['id']);
                 $is_validated = $verification ? $verification['is_validated'] : 0;
 
-                // Prevent login for unvalidated admin accounts
                 if ($user['role'] == 1 && $is_validated == 0) {
                     $response["message"] = "Admin account is not validated. Please contact support.";
                 } else {
-                    // Generate a temporary login verification token (valid for 15 minutes)
+                    // Generate verification token
                     $login_verification_token = bin2hex(random_bytes(32));
-                    $token_expiry = time() + (15 * 60); // 15 minutes
+                    $token_expiry = time() + (15 * 60);
                     
-                    // Store the pending login in session
-                    $_SESSION['pending_login'] = [
+                    // Store pending login data in file system
+                    $pending_data = [
                         'user_id' => $user['id'],
                         'email' => $user['email'],
                         'role' => $user['role'],
                         'is_validated' => $is_validated,
-                        'token' => $login_verification_token,
                         'expiry' => $token_expiry
                     ];
-
+                    
+                    store_pending_login($login_verification_token, $pending_data);
+                    
+                    // Determine base URL
+                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                    $host = $_SERVER['HTTP_HOST'];
+                    $base_url = $protocol . '://' . $host . '/digital-wallet-plateform/wallet-server/user/v1';
+                    
                     // Send verification email
-                    $email_sent = send_login_verification_email($email, $login_verification_token);
+                    $email_sent = @send_login_verification_email($email, $login_verification_token, $base_url);
                     
                     error_log("Email sent status: " . ($email_sent ? 'success' : 'failed'));
 
-                    if ($email_sent) {
-                        $response = [
-                            "status" => "pending_verification",
-                            "message" => "Please check your email to verify this login attempt. The verification link will expire in 15 minutes.",
-                            "email" => $email
-                        ];
-                    } else {
-                        // Email sending failed, but for development, let's still return pending
-                        $response = [
-                            "status" => "pending_verification",
-                            "message" => "Verification required. (Note: Email sending may not be configured on localhost)",
-                            "email" => $email,
-                            "debug_token" => $login_verification_token // For testing only
-                        ];
-                    }
+                    $response = [
+                        "status" => "pending_verification",
+                        "message" => "Verification required. (Note: Email sending may not be configured on localhost)",
+                        "email" => $email,
+                        "debug_token" => $login_verification_token,
+                        "debug_link" => $base_url . "/auth/verify_login.php?token=" . $login_verification_token
+                    ];
                 }
             } else {
                 error_log("Password verification failed");
@@ -184,10 +194,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 // Clean any output that might have been generated
 ob_clean();
 
-// Set JSON header
 header('Content-Type: application/json');
 echo json_encode($response);
 
-// End output buffering
 ob_end_flush();
 ?>
