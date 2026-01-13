@@ -83,6 +83,33 @@ function extractErr(err, fallback = "Request failed") {
   );
 }
 
+/**
+ * Open verification link in a new window/tab
+ */
+function openVerificationLink(verificationUrl) {
+  console.log("[login.js] Opening verification link:", verificationUrl);
+  
+  // Try to open in a popup window
+  const width = 600;
+  const height = 700;
+  const left = (screen.width - width) / 2;
+  const top = (screen.height - height) / 2;
+  
+  const popup = window.open(
+    verificationUrl,
+    'LoginVerification',
+    `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+  );
+  
+  if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+    // Popup was blocked, fallback to opening in current tab
+    console.warn("[login.js] Popup blocked, opening in current tab");
+    window.location.href = verificationUrl;
+  } else {
+    console.log("[login.js] Verification popup opened successfully");
+  }
+}
+
 /* =========================
    Listen for verification completion from popup
 ========================= */
@@ -168,31 +195,48 @@ window.addEventListener("message", function (event) {
       if (data.status === "pending_verification") {
         console.log("[login.js] Email verification pending");
         
-        // Show debug token if available (for testing)
+        // Build verification URL
+        let verificationUrl;
         if (data.debug_token) {
-          console.log("[login.js] Debug verification link:", 
-            `${API_BASE.replace('/user/v1', '')}/user/v1/auth/verify_login.php?token=${data.debug_token}`);
+          // Use debug token from response
+          verificationUrl = `${API_BASE.replace('/user/v1', '')}/user/v1/auth/verify_login.php?token=${data.debug_token}`;
+          console.log("[login.js] Debug verification link:", verificationUrl);
+        } else if (data.verification_url) {
+          // Use provided URL
+          verificationUrl = data.verification_url;
         }
         
-        showInfo(
-          data.message ||
-            "A verification email has been sent. Please check your inbox and click the verification link to complete login."
-        );
+        // Determine message based on email status
+        let message;
+        if (data.email_sent) {
+          message = "A verification email has been sent to your inbox. Please check your email and click the verification link.\n\nAlternatively, click OK to open the verification page now.";
+        } else {
+          message = "Email service is not configured yet. Click OK to open the verification page and complete your login.";
+        }
+        
+        // Show message and ask user to proceed
+        if (confirm(message)) {
+          if (verificationUrl) {
+            openVerificationLink(verificationUrl);
+          } else {
+            showError("Verification URL not available. Please contact support.");
+          }
+        }
         
         // Update button to show verification pending
         if (submitBtn) {
-          submitBtn.textContent = "Verification Email Sent";
+          submitBtn.textContent = "Open Verification Link";
           submitBtn.style.backgroundColor = "#ff9800";
+          submitBtn.disabled = false;
+          
+          // Allow user to click button to open verification link again
+          submitBtn.onclick = (e) => {
+            e.preventDefault();
+            if (verificationUrl) {
+              openVerificationLink(verificationUrl);
+            }
+          };
         }
-        
-        // Reset button after 5 seconds
-        setTimeout(() => {
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Login";
-            submitBtn.style.backgroundColor = "";
-          }
-        }, 5000);
         
         return;
       }
@@ -206,7 +250,7 @@ window.addEventListener("message", function (event) {
       showError(extractErr(err, "Login error"));
     } finally {
       // Only reset if not pending verification
-      if (submitBtn && submitBtn.textContent !== "Verification Email Sent") {
+      if (submitBtn && submitBtn.textContent === "Logging in...") {
         submitBtn.disabled = false;
         submitBtn.textContent = "Login";
       }
@@ -254,11 +298,3 @@ window.handleCredentialResponse = async function (googleResponse) {
 
 // ✅ Add alias for compatibility
 window.realHandleCredentialResponse = window.handleCredentialResponse;
-
-/* =========================
-   Optional: clear old session on page load
-========================= */
-// localStorage.removeItem('jwt');
-// localStorage.removeItem('userId');
-// localStorage.removeItem('userEmail');
-// localStorage.removeItem('userRole');
