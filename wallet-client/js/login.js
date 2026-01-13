@@ -82,7 +82,16 @@ function openVerificationLink(verificationUrl) {
     console.warn("[login.js] Popup blocked, opening in current tab");
     window.location.href = verificationUrl;
   } else {
-    console.log("[login.js] Verification popup opened successfully");
+    console.log("[login.js] ✓ Verification popup opened successfully");
+    console.log("[login.js] ⏳ Waiting for verification...");
+    
+    // Monitor popup
+    const checkPopup = setInterval(() => {
+      if (popup.closed) {
+        console.log("[login.js] Popup was closed");
+        clearInterval(checkPopup);
+      }
+    }, 500);
   }
 }
 
@@ -184,21 +193,46 @@ function showVerificationModal(email, emailSent, verificationUrl) {
   };
 }
 
-// Listen for verification completion
+// Listen for verification completion from popup
 window.addEventListener("message", function (event) {
+  console.log("[login.js] Received message:", event.data);
+  
+  // Security: Only accept messages from expected origins
+  const allowedOrigins = [
+    window.location.origin,
+    'http://localhost',
+    'https://hawaiian-privileges-levy-bases.trycloudflare.com'
+  ];
+  
+  const isAllowedOrigin = allowedOrigins.some(origin => 
+    event.origin.startsWith(origin)
+  );
+  
+  if (!isAllowedOrigin) {
+    console.warn("[login.js] Message from untrusted origin:", event.origin);
+    return;
+  }
+  
   if (event.data && event.data.type === "login_verified") {
     console.log("[login.js] ✅ Login verified via popup!");
     
     const { token, user } = event.data;
     if (token && user) {
       saveSession(token, user);
+      
+      // Close modal if it exists
+      const modal = document.querySelector('[style*="position: fixed"]');
+      if (modal) {
+        modal.remove();
+      }
+      
       showInfo("Login verified successfully! Redirecting...");
       setTimeout(() => {
         redirectToDashboard();
       }, 1000);
     }
   }
-});
+}, false);
 
 // Email/Password login
 (function wirePasswordLogin() {
