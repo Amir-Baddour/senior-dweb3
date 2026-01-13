@@ -1,6 +1,6 @@
 <?php
 // wallet-server/user/v1/deposit.php (Using Brevo SMTP - 300 emails/day FREE)
-ob_start();
+
 require_once __DIR__ . '/../../utils/cors.php';
 
 $DEBUG = true;
@@ -10,9 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   exit;
 }
 
-error_reporting(E_ALL);
-ini_set('log_errors', 1);
-ini_set('display_errors', 0);
 
 function out($arr)
 {
