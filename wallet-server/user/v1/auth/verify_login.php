@@ -26,10 +26,9 @@ function generate_jwt(array $payload, string $secret, int $expiry_in_seconds = 3
 }
 
 /**
- * Get pending login from file - FIXED VERSION
+ * Get pending login from file
  */
 function get_pending_login($token) {
-    // Use the same fixed directory as in login.php
     $file = __DIR__ . '/../../../temp/pending_logins/' . $token . '.json';
     
     error_log("Looking for pending login at: " . $file);
@@ -47,6 +46,28 @@ function get_pending_login($token) {
     unlink($file);
     
     return $data;
+}
+
+/**
+ * Determine the frontend URL based on the request
+ */
+function get_frontend_url() {
+    // Check if accessed through Cloudflare tunnel
+    $host = $_SERVER['HTTP_HOST'];
+    
+    if (strpos($host, 'trycloudflare.com') !== false || strpos($host, 'cloudflare.com') !== false) {
+        // Production - use your Vercel URL
+        return 'https://yourwallet0.vercel.app';
+    }
+    
+    // Local development
+    if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
+        return 'http://localhost:5500'; // Or your local dev port
+    }
+    
+    // Fallback to current origin
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    return $protocol . '://' . $host;
 }
 
 $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY";
@@ -70,6 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
             ];
             $jwt = generate_jwt($payload, $jwt_secret, 3600);
             
+            $frontend_url = get_frontend_url();
             ?>
             <!DOCTYPE html>
             <html lang="en">
@@ -88,6 +110,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                     .button { display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; transition: background-color 0.3s; cursor: pointer; border: none; font-size: 16px; }
                     .button:hover { background-color: #45a049; }
                     .info { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                    .copy-btn { background: #2196F3; font-size: 14px; padding: 8px 16px; margin-left: 10px; }
+                    .copy-btn:hover { background: #0b7dda; }
                 </style>
             </head>
             <body>
@@ -98,44 +122,74 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                     <div class="info">
                         <p><strong>Logged in as:</strong> <?php echo htmlspecialchars($pending['email']); ?></p>
                     </div>
-                    <div class="token-box">
+                    <div class="token-box" id="tokenBox">
                         <strong>Your JWT Token:</strong><br>
-                        <?php echo htmlspecialchars($jwt); ?>
+                        <span id="tokenText"><?php echo htmlspecialchars($jwt); ?></span>
                     </div>
                     <button class="button" onclick="completeLogin()">Continue to Dashboard</button>
+                    <button class="button copy-btn" onclick="copyToken()">Copy Token</button>
                 </div>
                 <script>
-                    const token = '<?php echo $jwt; ?>';
+                    const token = <?php echo json_encode($jwt); ?>;
                     const user = {
                         id: <?php echo $pending['user_id']; ?>,
-                        email: '<?php echo htmlspecialchars($pending['email']); ?>',
+                        email: <?php echo json_encode($pending['email']); ?>,
                         role: <?php echo $pending['role']; ?>,
                         is_validated: <?php echo $pending['is_validated']; ?>
                     };
+                    const frontendUrl = <?php echo json_encode($frontend_url); ?>;
+                    
+                    function copyToken() {
+                        const tokenText = document.getElementById('tokenText').textContent;
+                        navigator.clipboard.writeText(tokenText).then(() => {
+                            alert('Token copied to clipboard!');
+                        }).catch(err => {
+                            console.error('Failed to copy:', err);
+                        });
+                    }
                     
                     function completeLogin() {
-                        // Store token in localStorage
+                        console.log('Completing login...');
+                        console.log('Frontend URL:', frontendUrl);
+                        
+                        // Try to use localStorage if same origin
                         try {
                             localStorage.setItem('jwt', token);
                             localStorage.setItem('userId', user.id);
                             localStorage.setItem('userEmail', user.email);
                             localStorage.setItem('userRole', user.role);
-                            
-                            // Notify parent window if opened in popup
-                            if (window.opener) {
+                            console.log('Saved to localStorage');
+                        } catch(e) {
+                            console.log('Cannot use localStorage (different origin):', e);
+                        }
+                        
+                        // Build redirect URL with token as query parameter
+                        const redirectUrl = `${frontendUrl}/dashboard.html?token=${encodeURIComponent(token)}&userId=${user.id}&userEmail=${encodeURIComponent(user.email)}&userRole=${user.role}`;
+                        
+                        console.log('Redirecting to:', redirectUrl);
+                        
+                        // If opened in popup, notify parent
+                        if (window.opener) {
+                            try {
                                 window.opener.postMessage({
                                     type: 'login_verified',
                                     token: token,
                                     user: user
                                 }, '*');
-                                window.close();
-                            } else {
-                                // Redirect to dashboard
-                                window.location.href = '/dashboard.html';
+                                console.log('Sent message to parent window');
+                                
+                                // Wait a bit for message to be received, then close
+                                setTimeout(() => {
+                                    window.close();
+                                }, 500);
+                            } catch(e) {
+                                console.error('Failed to notify parent:', e);
+                                // Fallback to redirect
+                                window.location.href = redirectUrl;
                             }
-                        } catch(e) {
-                            console.error('Storage error:', e);
-                            alert('Please copy the token and return to the login page');
+                        } else {
+                            // Direct redirect
+                            window.location.href = redirectUrl;
                         }
                     }
                     
@@ -161,6 +215,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                     .error-icon { font-size: 64px; color: #f44336; margin-bottom: 20px; }
                     h1 { color: #333; margin-bottom: 20px; }
                     p { color: #666; line-height: 1.6; }
+                    .button { display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
                 </style>
             </head>
             <body>
@@ -168,6 +223,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                     <div class="error-icon">⏱</div>
                     <h1>Verification Link Expired</h1>
                     <p>This verification link has expired. Please try logging in again.</p>
+                    <a href="<?php echo get_frontend_url(); ?>/login.html" class="button">Back to Login</a>
                 </div>
             </body>
             </html>
@@ -189,6 +245,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                 .error-icon { font-size: 64px; color: #f44336; margin-bottom: 20px; }
                 h1 { color: #333; margin-bottom: 20px; }
                 p { color: #666; line-height: 1.6; }
+                .button { display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
             </style>
         </head>
         <body>
@@ -196,6 +253,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                 <div class="error-icon">✗</div>
                 <h1>Invalid Verification Token</h1>
                 <p>This verification link is invalid or has already been used. Please try logging in again.</p>
+                <a href="<?php echo get_frontend_url(); ?>/login.html" class="button">Back to Login</a>
             </div>
         </body>
         </html>
