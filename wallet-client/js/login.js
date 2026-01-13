@@ -1,4 +1,4 @@
-/* login.js - FIXED VERSION WITH CONFIG.JS INTEGRATION */
+/* login.js - FIXED VERSION WITH IMPROVED POPUP FLOW */
 
 // Wait for config.js to load
 (function waitForConfig() {
@@ -8,13 +8,11 @@
 })();
 
 const API_BASE = (() => {
-  // Always use config.js if available
   if (window.APP_CONFIG?.API_BASE_URL) {
     console.log("[login.js] Using API_BASE from config.js");
     return window.APP_CONFIG.API_BASE_URL;
   }
   
-  // Fallback (should rarely be used)
   console.warn("[login.js] APP_CONFIG not found, using fallback");
   const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
   const basePath = "/digital-wallet-plateform/wallet-server/user/v1";
@@ -23,7 +21,6 @@ const API_BASE = (() => {
     return `http://localhost${basePath}`;
   }
   
-  // Use current origin for Cloudflare tunnel
   return `${location.origin}${basePath}`;
 })();
 
@@ -89,6 +86,104 @@ function openVerificationLink(verificationUrl) {
   }
 }
 
+// Custom modal for verification message
+function showVerificationModal(email, emailSent, verificationUrl) {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  `;
+  
+  const icon = emailSent ? '✅' : '⚠️';
+  const title = emailSent ? 'SECURITY CHECK' : 'EMAIL NOT CONFIGURED';
+  
+  content.innerHTML = `
+    <div style="font-size: 48px; margin-bottom: 20px;">${icon}</div>
+    <h2 style="color: #333; margin-bottom: 16px; font-size: 24px;">${title}</h2>
+    ${emailSent ? `
+      <p style="color: #666; margin-bottom: 12px; line-height: 1.6;">
+        We've sent a verification email to:<br>
+        <strong style="color: #333;">${email}</strong>
+      </p>
+      <p style="color: #666; margin-bottom: 12px;">
+        📧 Please check your inbox and click the verification link to complete your login.
+      </p>
+    ` : `
+      <p style="color: #e67e22; margin-bottom: 12px; line-height: 1.6;">
+        Email service is not set up yet.
+      </p>
+      <p style="color: #666; margin-bottom: 12px;">
+        Click below to open the verification page and complete your login manually.
+      </p>
+    `}
+    <p style="color: #999; font-size: 14px; margin-bottom: 20px;">
+      ⏱️ The link expires in 15 minutes.
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button id="verifyBtn" style="
+        padding: 12px 30px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      ">Open Verification Page</button>
+      <button id="cancelBtn" style="
+        padding: 12px 30px;
+        background-color: #999;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      ">Cancel</button>
+    </div>
+  `;
+  
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+  
+  const verifyBtn = content.querySelector('#verifyBtn');
+  const cancelBtn = content.querySelector('#cancelBtn');
+  
+  verifyBtn.onmouseover = () => verifyBtn.style.backgroundColor = '#45a049';
+  verifyBtn.onmouseout = () => verifyBtn.style.backgroundColor = '#4CAF50';
+  cancelBtn.onmouseover = () => cancelBtn.style.backgroundColor = '#777';
+  cancelBtn.onmouseout = () => cancelBtn.style.backgroundColor = '#999';
+  
+  verifyBtn.onclick = () => {
+    openVerificationLink(verificationUrl);
+    document.body.removeChild(modal);
+  };
+  
+  cancelBtn.onclick = () => {
+    document.body.removeChild(modal);
+  };
+}
+
 // Listen for verification completion
 window.addEventListener("message", function (event) {
   if (event.data && event.data.type === "login_verified") {
@@ -133,7 +228,6 @@ window.addEventListener("message", function (event) {
       const resp = await http.post(ROUTES.passwordLogin, formData);
       let data = resp?.data;
       
-      // Handle potential string response
       if (typeof data === 'string') {
         try {
           const jsonMatch = data.match(/\{[\s\S]*\}/);
@@ -149,7 +243,7 @@ window.addEventListener("message", function (event) {
       
       console.log("[login.js] Backend response:", data);
 
-      // ✅ Successful immediate login (shouldn't happen with new flow)
+      // ✅ Successful immediate login (legacy)
       if (data.status === "success" && data.token && data.user) {
         console.log("[login.js] Immediate login (legacy)");
         saveSession(data.token, data.user);
@@ -168,21 +262,12 @@ window.addEventListener("message", function (event) {
           return;
         }
         
-        // Show different message based on whether email was sent
-        let message;
-        if (data.email_sent) {
-          message = `✅ SECURITY CHECK\n\nWe've sent a verification email to:\n${data.email}\n\n📧 Please check your inbox and click the verification link to complete your login.\n\n⏱️ The link expires in 15 minutes.\n\nClick OK to open the verification page now, or check your email.`;
-        } else {
-          message = `⚠️ EMAIL NOT CONFIGURED\n\nEmail service is not set up yet.\n\nClick OK to open the verification page and complete your login manually.\n\n⏱️ Link expires in 15 minutes.`;
-        }
+        // Show custom modal instead of confirm()
+        showVerificationModal(data.email, data.email_sent, verificationUrl);
         
-        if (confirm(message)) {
-          openVerificationLink(verificationUrl);
-        }
-        
-        // Update button
+        // Update button to allow re-opening verification
         if (submitBtn) {
-          submitBtn.textContent = "Open Verification Link";
+          submitBtn.textContent = "Resend Verification";
           submitBtn.style.backgroundColor = "#ff9800";
           submitBtn.disabled = false;
           
