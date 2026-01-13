@@ -136,7 +136,22 @@ window.addEventListener("message", function (event) {
 
     try {
       const resp = await http.post(ROUTES.passwordLogin, formData);
-      const data = resp?.data || {};
+      let data = resp?.data;
+      
+      // Handle case where response might be a string with JSON
+      if (typeof data === 'string') {
+        try {
+          // Try to find JSON in the response
+          const jsonMatch = data.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            data = JSON.parse(jsonMatch[0]);
+          }
+        } catch (parseErr) {
+          console.error("[login.js] Failed to parse response:", parseErr);
+          showError("Invalid server response");
+          return;
+        }
+      }
       
       console.log("[login.js] Backend response:", data);
       console.log("[login.js] Response status:", data.status);
