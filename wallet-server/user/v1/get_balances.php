@@ -27,7 +27,7 @@ $userId = $decoded['id'];
 // --- Fetch all wallets for this user ---
 try {
     $walletsModel = new WalletsModel();
-    $wallets = $walletsModel->getWalletsByUser($userId);
+    $wallets = $walletsModel->getWalletsByUser($userId) ?? [];
 
     $balances = [];
     foreach ($wallets as $w) {
