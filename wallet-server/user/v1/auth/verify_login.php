@@ -48,41 +48,6 @@ function get_pending_login($token) {
     return $data;
 }
 
-/**
- * Determine the frontend URL based on the request
- */
-function get_frontend_url() {
-    $host = $_SERVER['HTTP_HOST'];
-    
-    // Check if there's a referer header from the login page
-    $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
-    
-    if ($referer) {
-        // Extract the base URL from referer
-        $parsed = parse_url($referer);
-        if ($parsed && isset($parsed['scheme']) && isset($parsed['host'])) {
-            $frontendUrl = $parsed['scheme'] . '://' . $parsed['host'];
-            error_log("Frontend URL from referer: " . $frontendUrl);
-            return $frontendUrl;
-        }
-    }
-    
-    // Fallback logic
-    if (strpos($host, 'trycloudflare.com') !== false || strpos($host, 'cloudflare.com') !== false) {
-        // Try common frontend URLs for production
-        return 'https://yourwallet0.vercel.app';
-    }
-    
-    if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
-        // Local development - try different common ports
-        return 'http://localhost:5500'; // Or change to your port: 3000, 8080, etc.
-    }
-    
-    // Last resort: use the same origin as the API
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-    return $protocol . '://' . $host;
-}
-
 $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY";
 
 if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
@@ -101,8 +66,6 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                 "is_validated" => $pending["is_validated"]
             ];
             $jwt = generate_jwt($payload, $jwt_secret, 3600);
-            
-            $frontend_url = get_frontend_url();
             ?>
             <!DOCTYPE html>
             <html lang="en">
@@ -220,6 +183,17 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                         0% { transform: rotate(0deg); }
                         100% { transform: rotate(360deg); }
                     }
+                    .debug-info {
+                        background: #fff3cd;
+                        border: 1px solid #ffc107;
+                        padding: 12px;
+                        border-radius: 8px;
+                        margin-top: 20px;
+                        font-size: 12px;
+                        text-align: left;
+                        max-height: 150px;
+                        overflow-y: auto;
+                    }
                 </style>
             </head>
             <body>
@@ -237,6 +211,10 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                             <span class="spinner"></span>
                         </span>
                     </button>
+                    <div class="debug-info" id="debugInfo" style="display:none;">
+                        <strong>Debug Info:</strong><br>
+                        <span id="debugText"></span>
+                    </div>
                 </div>
                 <script>
                     const token = <?php echo json_encode($jwt); ?>;
@@ -246,10 +224,60 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                         role: <?php echo json_encode($pending['role']); ?>,
                         is_validated: <?php echo json_encode($pending['is_validated']); ?>
                     };
-                    const frontendUrl = <?php echo json_encode($frontend_url); ?>;
                     
                     let countdown = 3;
                     let redirecting = false;
+                    
+                    // 🔥 SMART URL DETECTION 🔥
+                    function detectFrontendUrl() {
+                        // Try to get the opener's origin (if opened as popup)
+                        if (window.opener) {
+                            try {
+                                const openerOrigin = window.opener.location.origin;
+                                console.log('✅ Detected frontend from opener:', openerOrigin);
+                                return openerOrigin;
+                            } catch(e) {
+                                console.log('ℹ️ Cannot access opener origin (CORS)');
+                            }
+                        }
+                        
+                        // Check if there's a referer
+                        if (document.referrer) {
+                            try {
+                                const url = new URL(document.referrer);
+                                const origin = url.origin;
+                                console.log('✅ Detected frontend from referrer:', origin);
+                                return origin;
+                            } catch(e) {
+                                console.log('⚠️ Failed to parse referrer');
+                            }
+                        }
+                        
+                        // Fallback to common URLs
+                        console.log('⚠️ Using fallback URLs');
+                        
+                        // Check if we're on localhost API
+                        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                            return 'http://localhost:5500'; // Or try 'http://127.0.0.1'
+                        }
+                        
+                        // Default to Vercel
+                        return 'https://yourwallet0.vercel.app';
+                    }
+                    
+                    const frontendUrl = detectFrontendUrl();
+                    console.log('🎯 Final frontend URL:', frontendUrl);
+                    
+                    // Show debug info
+                    const debugInfo = document.getElementById('debugInfo');
+                    const debugText = document.getElementById('debugText');
+                    debugText.innerHTML = `
+                        Referrer: ${document.referrer || 'none'}<br>
+                        Has Opener: ${window.opener ? 'yes' : 'no'}<br>
+                        Detected URL: ${frontendUrl}<br>
+                        Current Location: ${window.location.href}
+                    `;
+                    debugInfo.style.display = 'block';
                     
                     function updateCountdown() {
                         const countdownEl = document.getElementById('countdown');
@@ -341,8 +369,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
             </html>
             <?php
         } else {
-            // Token expired
-            $frontend_url = get_frontend_url();
+            // Token expired - just show error message without knowing frontend URL
             ?>
             <!DOCTYPE html>
             <html lang="en">
@@ -357,7 +384,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                     .error-icon { font-size: 64px; color: #f44336; margin-bottom: 20px; }
                     h1 { color: #333; margin-bottom: 20px; }
                     p { color: #666; line-height: 1.6; margin-bottom: 20px; }
-                    .button { display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; transition: background-color 0.3s; }
+                    .button { display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; transition: background-color 0.3s; cursor: pointer; }
                     .button:hover { background-color: #45a049; }
                 </style>
             </head>
@@ -365,8 +392,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                 <div class="container">
                     <div class="error-icon">⏱</div>
                     <h1>Verification Link Expired</h1>
-                    <p>This verification link has expired (valid for 15 minutes). Please try logging in again to receive a new verification link.</p>
-                    <a href="<?php echo htmlspecialchars($frontend_url); ?>/login.html" class="button">Back to Login</a>
+                    <p>This verification link has expired (valid for 15 minutes). Please close this window and try logging in again.</p>
+                    <button class="button" onclick="window.close()">Close Window</button>
                 </div>
             </body>
             </html>
@@ -374,7 +401,6 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
         }
     } else {
         // Invalid or already used token
-        $frontend_url = get_frontend_url();
         ?>
         <!DOCTYPE html>
         <html lang="en">
@@ -389,7 +415,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                 .error-icon { font-size: 64px; color: #f44336; margin-bottom: 20px; }
                 h1 { color: #333; margin-bottom: 20px; }
                 p { color: #666; line-height: 1.6; margin-bottom: 20px; }
-                .button { display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; transition: background-color 0.3s; }
+                .button { display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; transition: background-color 0.3s; cursor: pointer; }
                 .button:hover { background-color: #45a049; }
             </style>
         </head>
@@ -397,8 +423,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
             <div class="container">
                 <div class="error-icon">✗</div>
                 <h1>Invalid Verification Token</h1>
-                <p>This verification link is invalid or has already been used. Please try logging in again to receive a new verification link.</p>
-                <a href="<?php echo htmlspecialchars($frontend_url); ?>/login.html" class="button">Back to Login</a>
+                <p>This verification link is invalid or has already been used. Please close this window and try logging in again.</p>
+                <button class="button" onclick="window.close()">Close Window</button>
             </div>
         </body>
         </html>
