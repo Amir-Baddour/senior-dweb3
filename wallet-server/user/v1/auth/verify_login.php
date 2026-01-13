@@ -266,7 +266,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                 <div class="info">
                     <p><strong>Logged in as:</strong> <?php echo htmlspecialchars($pending['email']); ?></p>
                 </div>
-                <p>Redirecting in <span class="countdown" id="countdown">3</span> seconds...</p>
+                <p>Redirecting in <span class="countdown" id="countdown">5</span> seconds...</p>
                 <button class="button" onclick="redirectNow()">Continue to Dashboard</button>
             </div>
             
@@ -280,7 +280,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                     is_validated: <?php echo json_encode($pending['is_validated']); ?>
                 };
                 
-                let countdown = 3;
+                let countdown = 5;
                 let redirecting = false;
                 
                 /**
@@ -355,18 +355,34 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                         console.log("This is a popup - sending message to parent...");
                         
                         try {
-                            // Send login data to parent window
-                            window.opener.postMessage({
-                                type: 'login_verified',
-                                token: token,
-                                user: user
-                            }, '*');
+                            // Send login data to parent window MULTIPLE TIMES to ensure delivery
+                            const sendMessage = () => {
+                                window.opener.postMessage({
+                                    type: 'login_verified',
+                                    token: token,
+                                    user: user
+                                }, '*');
+                            };
                             
-                            console.log("✓ Message sent to parent window");
+                            // Send immediately
+                            sendMessage();
+                            console.log("✓ Message sent to parent window (attempt 1)");
                             
-                            // Wait for parent to receive message, then close popup
+                            // Send again after 100ms
                             setTimeout(() => {
-                                console.log("Attempting to close popup...");
+                                sendMessage();
+                                console.log("✓ Message sent to parent window (attempt 2)");
+                            }, 100);
+                            
+                            // Send again after 300ms
+                            setTimeout(() => {
+                                sendMessage();
+                                console.log("✓ Message sent to parent window (attempt 3)");
+                            }, 300);
+                            
+                            // Wait 2 seconds for parent to receive message, then close popup
+                            setTimeout(() => {
+                                console.log("Attempting to close popup in 2 seconds...");
                                 window.close();
                                 
                                 // Fallback: if popup can't close, redirect
@@ -376,7 +392,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                                         window.location.href = redirectUrl;
                                     }
                                 }, 1000);
-                            }, 500);
+                            }, 2000);
                             
                             return;
                         } catch(e) {
