@@ -1,5 +1,5 @@
 <?php
-ob_start();
+
 
 // wallet-server/user/v1/exchange_processor.php
 require_once __DIR__ . '/../../utils/cors.php';
