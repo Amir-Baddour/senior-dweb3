@@ -26,16 +26,22 @@ function generate_jwt(array $payload, string $secret, int $expiry_in_seconds = 3
 }
 
 /**
- * Get pending login from file
+ * Get pending login from file - FIXED VERSION
  */
 function get_pending_login($token) {
-    $file = sys_get_temp_dir() . '/pending_logins/' . $token . '.json';
+    // Use the same fixed directory as in login.php
+    $file = __DIR__ . '/../../../temp/pending_logins/' . $token . '.json';
+    
+    error_log("Looking for pending login at: " . $file);
+    error_log("File exists: " . (file_exists($file) ? 'yes' : 'no'));
     
     if (!file_exists($file)) {
         return null;
     }
     
     $data = json_decode(file_get_contents($file), true);
+    
+    error_log("Found pending login data: " . json_encode($data));
     
     // Delete the file after reading
     unlink($file);
@@ -47,6 +53,8 @@ $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY";
 
 if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
     $token = $_GET['token'];
+    
+    error_log("Verification attempt with token: " . $token);
     
     $pending = get_pending_login($token);
     
