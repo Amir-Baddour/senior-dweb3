@@ -8,6 +8,11 @@ require_once __DIR__ . '/../../../connection/db.php';
 require_once __DIR__ . '/../../../models/UsersModel.php';
 require_once __DIR__ . '/../../../models/VerificationsModel.php';
 
+// Uncomment this if using PHPMailer
+// use PHPMailer\PHPMailer\PHPMailer;
+// use PHPMailer\PHPMailer\Exception;
+// require __DIR__ . '/../../../vendor/autoload.php';
+
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
@@ -34,10 +39,9 @@ function generate_jwt(array $payload, string $secret, int $expiry_in_seconds = 3
 }
 
 /**
- * Store pending login - FIXED VERSION
+ * Store pending login
  */
 function store_pending_login($token, $data) {
-    // Use a fixed directory within your project instead of sys_get_temp_dir()
     $dir = __DIR__ . '/../../../temp/pending_logins';
     
     if (!is_dir($dir)) {
@@ -60,9 +64,88 @@ function store_pending_login($token, $data) {
 }
 
 /**
- * Send login verification email
+ * Send login verification email using PHPMailer (SMTP)
  */
-function send_login_verification_email($email, $verification_token, $base_url) {
+function send_login_verification_email_smtp($email, $verification_token, $base_url) {
+    // Uncomment and configure when ready to use PHPMailer
+    /*
+    $mail = new PHPMailer(true);
+    
+    try {
+        // SMTP Configuration
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com'; // Or your SMTP server
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'your-email@gmail.com'; // Your email
+        $mail->Password   = 'your-app-password';    // App password (not regular password)
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = 587;
+        
+        // Email settings
+        $mail->setFrom('noreply@digitalwallet.com', 'Digital Wallet');
+        $mail->addAddress($email);
+        $mail->isHTML(true);
+        
+        $verification_link = $base_url . "/auth/verify_login.php?token=" . urlencode($verification_token);
+        
+        $mail->Subject = 'Login Verification - Is this you?';
+        $mail->Body    = "
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+                .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; }
+                .button { display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+                .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #777; }
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <div class='header'>
+                    <h2>Login Verification Required</h2>
+                </div>
+                <div class='content'>
+                    <h3>Is this you?</h3>
+                    <p>We detected a login attempt to your account. If this was you, please verify by clicking the button below:</p>
+                    <center>
+                        <a href='$verification_link' class='button'>Yes, This Was Me</a>
+                    </center>
+                    <p><strong>Login Details:</strong></p>
+                    <ul>
+                        <li>Time: " . date('Y-m-d H:i:s') . "</li>
+                        <li>Email: $email</li>
+                    </ul>
+                    <p><strong>If this wasn't you:</strong></p>
+                    <p>Please ignore this email and consider changing your password immediately.</p>
+                    <p>This verification link will expire in 15 minutes.</p>
+                </div>
+                <div class='footer'>
+                    <p>This is an automated message. Please do not reply.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        ";
+        
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log("Email sending failed: " . $mail->ErrorInfo);
+        return false;
+    }
+    */
+    
+    // For now, just log that email would be sent
+    error_log("Email would be sent to: " . $email);
+    return false; // Return false to indicate email not actually sent
+}
+
+/**
+ * Fallback: Basic PHP mail() function
+ */
+function send_login_verification_email_basic($email, $verification_token, $base_url) {
     $verification_link = $base_url . "/auth/verify_login.php?token=" . urlencode($verification_token);
     
     $subject = "Login Verification - Is this you?";
@@ -164,10 +247,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         error_log("Failed to store pending login");
                         $response["message"] = "Failed to create verification. Please try again.";
                     } else {
-                        // Determine base URL - FIXED to always use HTTPS for Cloudflare
+                        // Determine base URL
                         $host = $_SERVER['HTTP_HOST'];
                         
-                        // Force HTTPS if accessed through Cloudflare tunnel
                         if (strpos($host, 'trycloudflare.com') !== false) {
                             $protocol = 'https';
                         } else {
@@ -179,15 +261,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         error_log("Base URL: " . $base_url);
                         error_log("Verification token: " . $login_verification_token);
                         
-                        // Send verification email
-                        $email_sent = @send_login_verification_email($email, $login_verification_token, $base_url);
+                        // Try to send email (will fail on localhost without SMTP)
+                        $email_sent = send_login_verification_email_basic($email, $login_verification_token, $base_url);
                         
                         error_log("Email sent status: " . ($email_sent ? 'success' : 'failed'));
 
                         $response = [
                             "status" => "pending_verification",
-                            "message" => "Verification required. Please check your email or use the debug link below.",
+                            "message" => $email_sent 
+                                ? "Verification email sent! Please check your inbox." 
+                                : "Verification required. Email not configured - use the debug link below.",
                             "email" => $email,
+                            "email_sent" => $email_sent,
                             "debug_token" => $login_verification_token,
                             "debug_link" => $base_url . "/auth/verify_login.php?token=" . $login_verification_token
                         ];

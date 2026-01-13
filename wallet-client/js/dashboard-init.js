@@ -1,5 +1,5 @@
-// Add this script at the top of your dashboard.html (before other scripts)
 // dashboard-init.js
+// Add this at the TOP of your dashboard.html before other scripts
 
 (function initializeDashboard() {
     console.log('[Dashboard] Initializing...');
@@ -53,10 +53,11 @@
         }
         
         console.log('[Dashboard] Authentication valid');
+        console.log('[Dashboard] Token payload:', payload);
         
-        // Display user info
-        const userEmail = localStorage.getItem('userEmail');
-        const userRole = localStorage.getItem('userRole');
+        // Get user info
+        const userEmail = localStorage.getItem('userEmail') || payload.email || 'User';
+        const userRole = localStorage.getItem('userRole') || payload.role || '0';
         
         console.log('[Dashboard] User:', {
             id: userId,
@@ -64,10 +65,11 @@
             role: userRole
         });
         
-        // You can update UI elements here
-        const userEmailElement = document.getElementById('userEmail');
-        if (userEmailElement) {
-            userEmailElement.textContent = userEmail || 'User';
+        // Update UI when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => updateUserUI(userEmail, userRole));
+        } else {
+            updateUserUI(userEmail, userRole);
         }
         
     } catch (e) {
@@ -77,9 +79,82 @@
     }
 })();
 
-// Add logout function
+/**
+ * Update user interface with user information
+ */
+function updateUserUI(email, role) {
+    console.log('[Dashboard] Updating UI with email:', email, 'role:', role);
+    
+    // Update user name
+    const userNameElement = document.querySelector('.dashboard-user-name');
+    if (userNameElement) {
+        // Extract name from email (before @)
+        const displayName = email.split('@')[0];
+        userNameElement.textContent = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+    }
+    
+    // Update user meta (VIP level based on role)
+    const userMetaElement = document.querySelector('.dashboard-user-meta');
+    if (userMetaElement) {
+        if (role === '1' || role === 1) {
+            userMetaElement.textContent = 'VIP Level: Administrator';
+        } else {
+            userMetaElement.textContent = 'VIP Level: Regular User';
+        }
+    }
+    
+    // Update any email display elements
+    const emailElements = document.querySelectorAll('[data-user-email]');
+    emailElements.forEach(el => {
+        el.textContent = email;
+    });
+    
+    console.log('[Dashboard] UI updated successfully');
+}
+
+/**
+ * Logout function
+ */
 function logout() {
     console.log('[Dashboard] Logging out...');
+    
+    // Clear all localStorage
     localStorage.clear();
+    
+    // Redirect to login page
     window.location.href = '/login.html';
 }
+
+/**
+ * Get current user data
+ */
+function getCurrentUser() {
+    const jwt = localStorage.getItem('jwt');
+    if (!jwt) return null;
+    
+    try {
+        const payload = JSON.parse(atob(jwt.split('.')[1]));
+        return {
+            id: localStorage.getItem('userId') || payload.id,
+            email: localStorage.getItem('userEmail') || payload.email,
+            role: localStorage.getItem('userRole') || payload.role,
+            token: jwt
+        };
+    } catch (e) {
+        console.error('[Dashboard] Failed to parse user data:', e);
+        return null;
+    }
+}
+
+/**
+ * Check if user is admin
+ */
+function isAdmin() {
+    const user = getCurrentUser();
+    return user && (user.role === '1' || user.role === 1);
+}
+
+// Export functions for global use
+window.logout = logout;
+window.getCurrentUser = getCurrentUser;
+window.isAdmin = isAdmin;
