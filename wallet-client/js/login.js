@@ -62,8 +62,12 @@ function saveSession(token, user) {
 }
 
 function redirectToDashboard() {
+  // Use current origin (works for both localhost and Vercel)
   const baseUrl = window.location.origin;
-  window.location.href = `${baseUrl}/dashboard.html`;
+  const dashboardUrl = `${baseUrl}/dashboard.html`;
+  
+  console.log("[login.js] Redirecting to dashboard:", dashboardUrl);
+  window.location.href = dashboardUrl;
 }
 
 function showError(msg) {
