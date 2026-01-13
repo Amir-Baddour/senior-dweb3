@@ -1,5 +1,5 @@
 <?php
-// verify_login.php - COMPLETE FIXED VERSION
+// verify_login.php - COMPLETE REWRITTEN VERSION
 
 ob_start();
 require_once __DIR__ . '/../../../utils/cors.php';
@@ -59,23 +59,26 @@ function get_pending_login($token) {
     
     error_log("Successfully loaded pending login for user: " . $data['email']);
     
-    // Delete the file after reading
+    // Delete the file after reading (one-time use)
     unlink($file);
     
     return $data;
 }
 
+// CHANGE THIS TO A STRONG SECRET KEY
 $jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY";
 
+// Only accept GET requests with token parameter
 if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
     $token = $_GET['token'];
     
+    // Load pending login data
     $pending = get_pending_login($token);
     
     if ($pending) {
-        // Check if token expired
+        // Check if token expired (15 minutes)
         if (time() > $pending['expiry']) {
-            // Token expired
+            // TOKEN EXPIRED - Show error page
             ob_end_clean();
             ?>
             <!DOCTYPE html>
@@ -127,15 +130,27 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                     <h1>Verification Link Expired</h1>
                     <p>This verification link has expired (valid for 15 minutes).</p>
                     <p>For security reasons, please return to the login page and try again.</p>
-                    <button class="button" onclick="window.close()">Close Window</button>
+                    <button class="button" onclick="closeWindow()">Close Window</button>
                 </div>
+                <script>
+                    function closeWindow() {
+                        // Try to close if it's a popup
+                        if (window.opener) {
+                            window.close();
+                        }
+                        // Fallback: redirect to login
+                        setTimeout(() => {
+                            window.location.href = '<?php echo ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || strpos($_SERVER['HTTP_HOST'], 'trycloudflare.com') !== false) ? 'https' : 'http'; ?>://<?php echo $_SERVER['HTTP_HOST']; ?>/login.html';
+                        }, 100);
+                    }
+                </script>
             </body>
             </html>
             <?php
             exit;
         }
         
-        // Token is valid - generate JWT and redirect
+        // TOKEN IS VALID - Generate JWT and show success page
         $payload = [
             "id" => $pending["user_id"],
             "email" => $pending["email"],
@@ -254,7 +269,9 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                 <p>Redirecting in <span class="countdown" id="countdown">3</span> seconds...</p>
                 <button class="button" onclick="redirectNow()">Continue to Dashboard</button>
             </div>
+            
             <script>
+                // User data from PHP
                 const token = <?php echo json_encode($jwt); ?>;
                 const user = {
                     id: <?php echo json_encode($pending['user_id']); ?>,
@@ -266,28 +283,43 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                 let countdown = 3;
                 let redirecting = false;
                 
+                /**
+                 * Detect where the frontend is running
+                 */
                 function detectFrontendUrl() {
-                    if (window.opener) {
+                    // Try to get from opener (if this is a popup)
+                    if (window.opener && !window.opener.closed) {
                         try {
                             return window.opener.location.origin;
-                        } catch(e) {}
+                        } catch(e) {
+                            console.log("Cannot access opener origin (cross-origin)");
+                        }
                     }
                     
+                    // Try from referrer
                     if (document.referrer) {
                         try {
                             return new URL(document.referrer).origin;
-                        } catch(e) {}
+                        } catch(e) {
+                            console.log("Cannot parse referrer");
+                        }
                     }
                     
+                    // Localhost fallback
                     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                         return 'http://localhost:5500';
                     }
                     
+                    // Production fallback - CHANGE THIS TO YOUR VERCEL URL
                     return 'https://yourwallet0.vercel.app';
                 }
                 
                 const frontendUrl = detectFrontendUrl();
+                console.log("Frontend URL detected:", frontendUrl);
                 
+                /**
+                 * Update countdown display
+                 */
                 function updateCountdown() {
                     const countdownEl = document.getElementById('countdown');
                     if (countdownEl && countdown > 0) {
@@ -296,40 +328,68 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                     }
                 }
                 
+                /**
+                 * Main redirect function
+                 */
                 function redirectNow() {
                     if (redirecting) return;
                     redirecting = true;
                     
-                    const redirectUrl = `${frontendUrl}/dashboard.html?token=${encodeURIComponent(token)}&userId=${encodeURIComponent(user.id)}&userEmail=${encodeURIComponent(user.email)}&userRole=${encodeURIComponent(user.role)}`;
+                    console.log("Starting redirect process...");
                     
+                    const redirectUrl = frontendUrl + '/dashboard.html';
+                    
+                    // Try to save to localStorage
                     try {
                         localStorage.setItem('jwt', token);
                         localStorage.setItem('userId', user.id.toString());
                         localStorage.setItem('userEmail', user.email);
                         localStorage.setItem('userRole', user.role.toString());
-                    } catch(e) {}
+                        console.log("✓ Saved to localStorage");
+                    } catch(e) {
+                        console.warn("✗ Could not save to localStorage:", e);
+                    }
                     
+                    // If this is a popup, communicate with parent window
                     if (window.opener && !window.opener.closed) {
+                        console.log("This is a popup - sending message to parent...");
+                        
                         try {
+                            // Send login data to parent window
                             window.opener.postMessage({
                                 type: 'login_verified',
                                 token: token,
                                 user: user
                             }, '*');
                             
+                            console.log("✓ Message sent to parent window");
+                            
+                            // Wait for parent to receive message, then close popup
                             setTimeout(() => {
+                                console.log("Attempting to close popup...");
                                 window.close();
+                                
+                                // Fallback: if popup can't close, redirect
                                 setTimeout(() => {
-                                    window.location.href = redirectUrl;
-                                }, 500);
+                                    if (!window.closed) {
+                                        console.log("Popup couldn't close, redirecting instead...");
+                                        window.location.href = redirectUrl;
+                                    }
+                                }, 1000);
                             }, 500);
+                            
                             return;
-                        } catch(e) {}
+                        } catch(e) {
+                            console.error("✗ Failed to communicate with parent:", e);
+                        }
                     }
                     
+                    // Not a popup or communication failed - direct redirect
+                    console.log("Redirecting directly to:", redirectUrl);
                     window.location.href = redirectUrl;
                 }
                 
+                // Start countdown timer
                 const countdownInterval = setInterval(() => {
                     updateCountdown();
                     if (countdown < 0) {
@@ -338,6 +398,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                     }
                 }, 1000);
                 
+                // Initialize countdown display
                 updateCountdown();
             </script>
         </body>
@@ -346,7 +407,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
         exit;
         
     } else {
-        // Invalid or already used token
+        // INVALID TOKEN - Show error page
         ob_end_clean();
         ?>
         <!DOCTYPE html>
@@ -398,18 +459,35 @@ if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['token'])) {
                 <h1>Invalid Verification Token</h1>
                 <p>This verification link is invalid or has already been used.</p>
                 <p>Please return to the login page and try again.</p>
-                <button class="button" onclick="window.close()">Close Window</button>
+                <button class="button" onclick="closeWindow()">Close Window</button>
             </div>
+            <script>
+                function closeWindow() {
+                    // Try to close if it's a popup
+                    if (window.opener) {
+                        window.close();
+                    }
+                    // Fallback: redirect to login
+                    setTimeout(() => {
+                        window.location.href = '<?php echo ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || strpos($_SERVER['HTTP_HOST'], 'trycloudflare.com') !== false) ? 'https' : 'http'; ?>://<?php echo $_SERVER['HTTP_HOST']; ?>/login.html';
+                    }, 100);
+                }
+            </script>
         </body>
         </html>
         <?php
         exit;
     }
+    
 } else {
+    // INVALID REQUEST - No token provided
     ob_end_clean();
     http_response_code(400);
     header('Content-Type: application/json');
-    echo json_encode(["status" => "error", "message" => "Invalid request"]);
+    echo json_encode([
+        "status" => "error", 
+        "message" => "Invalid request. Token parameter is required."
+    ]);
     exit;
 }
 ?>
