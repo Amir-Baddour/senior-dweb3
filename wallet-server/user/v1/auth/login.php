@@ -1,6 +1,5 @@
 <?php
 
-// Clean output buffer and start fresh
 ob_start();
 session_start();
 
@@ -9,7 +8,6 @@ require_once __DIR__ . '/../../../connection/db.php';
 require_once __DIR__ . '/../../../models/UsersModel.php';
 require_once __DIR__ . '/../../../models/VerificationsModel.php';
 
-// Suppress display errors for cleaner JSON output
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
@@ -36,16 +34,20 @@ function generate_jwt(array $payload, string $secret, int $expiry_in_seconds = 3
 }
 
 /**
- * Store pending login in a file (for cross-domain compatibility)
+ * Store pending login - FIXED VERSION
  */
 function store_pending_login($token, $data) {
-    $dir = sys_get_temp_dir() . '/pending_logins';
+    // Use a fixed directory within your project instead of sys_get_temp_dir()
+    $dir = __DIR__ . '/../../../temp/pending_logins';
+    
     if (!is_dir($dir)) {
         mkdir($dir, 0777, true);
     }
     
     $file = $dir . '/' . $token . '.json';
-    file_put_contents($file, json_encode($data));
+    $result = file_put_contents($file, json_encode($data));
+    
+    error_log("Stored pending login at: " . $file . " (result: " . ($result !== false ? 'success' : 'failed') . ")");
     
     // Clean up old files (older than 20 minutes)
     foreach (glob($dir . '/*.json') as $oldFile) {
@@ -53,6 +55,8 @@ function store_pending_login($token, $data) {
             unlink($oldFile);
         }
     }
+    
+    return $result !== false;
 }
 
 /**
@@ -145,7 +149,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $login_verification_token = bin2hex(random_bytes(32));
                     $token_expiry = time() + (15 * 60);
                     
-                    // Store pending login data in file system
+                    // Store pending login data
                     $pending_data = [
                         'user_id' => $user['id'],
                         'email' => $user['email'],
@@ -154,25 +158,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         'expiry' => $token_expiry
                     ];
                     
-                    store_pending_login($login_verification_token, $pending_data);
+                    $stored = store_pending_login($login_verification_token, $pending_data);
                     
-                    // Determine base URL
-                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-                    $host = $_SERVER['HTTP_HOST'];
-                    $base_url = $protocol . '://' . $host . '/digital-wallet-plateform/wallet-server/user/v1';
-                    
-                    // Send verification email
-                    $email_sent = @send_login_verification_email($email, $login_verification_token, $base_url);
-                    
-                    error_log("Email sent status: " . ($email_sent ? 'success' : 'failed'));
+                    if (!$stored) {
+                        error_log("Failed to store pending login");
+                        $response["message"] = "Failed to create verification. Please try again.";
+                    } else {
+                        // Determine base URL - FIXED to always use HTTPS for Cloudflare
+                        $host = $_SERVER['HTTP_HOST'];
+                        
+                        // Force HTTPS if accessed through Cloudflare tunnel
+                        if (strpos($host, 'trycloudflare.com') !== false) {
+                            $protocol = 'https';
+                        } else {
+                            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                        }
+                        
+                        $base_url = $protocol . '://' . $host . '/digital-wallet-plateform/wallet-server/user/v1';
+                        
+                        error_log("Base URL: " . $base_url);
+                        error_log("Verification token: " . $login_verification_token);
+                        
+                        // Send verification email
+                        $email_sent = @send_login_verification_email($email, $login_verification_token, $base_url);
+                        
+                        error_log("Email sent status: " . ($email_sent ? 'success' : 'failed'));
 
-                    $response = [
-                        "status" => "pending_verification",
-                        "message" => "Verification required. (Note: Email sending may not be configured on localhost)",
-                        "email" => $email,
-                        "debug_token" => $login_verification_token,
-                        "debug_link" => $base_url . "/auth/verify_login.php?token=" . $login_verification_token
-                    ];
+                        $response = [
+                            "status" => "pending_verification",
+                            "message" => "Verification required. Please check your email or use the debug link below.",
+                            "email" => $email,
+                            "debug_token" => $login_verification_token,
+                            "debug_link" => $base_url . "/auth/verify_login.php?token=" . $login_verification_token
+                        ];
+                    }
                 }
             } else {
                 error_log("Password verification failed");
@@ -191,11 +210,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
-// Clean any output that might have been generated
 ob_clean();
-
 header('Content-Type: application/json');
 echo json_encode($response);
-
 ob_end_flush();
 ?>
