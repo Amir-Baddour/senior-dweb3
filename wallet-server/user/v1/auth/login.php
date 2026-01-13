@@ -1,5 +1,6 @@
 <?php
 
+// Clean output buffer and start fresh
 ob_start();
 session_start(); // Start session at the beginning
 
@@ -7,6 +8,10 @@ require_once __DIR__ . '/../../../utils/cors.php';
 require_once __DIR__ . '/../../../connection/db.php';
 require_once __DIR__ . '/../../../models/UsersModel.php';
 require_once __DIR__ . '/../../../models/VerificationsModel.php';
+
+// Suppress display errors for cleaner JSON output
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
 
 /**
  * Generate a simple JWT (for demonstration purposes).
@@ -82,7 +87,8 @@ function send_login_verification_email($email, $verification_token) {
     $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
     $headers .= "From: noreply@digitalwallet.com" . "\r\n";
 
-    return mail($email, $subject, $message, $headers);
+    // Suppress mail errors for development
+    return @mail($email, $subject, $message, $headers);
 }
 
 // Replace with your secure secret key
@@ -175,7 +181,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
+// Clean any output that might have been generated
+ob_clean();
+
 // Set JSON header
 header('Content-Type: application/json');
 echo json_encode($response);
+
+// End output buffering
+ob_end_flush();
 ?>
