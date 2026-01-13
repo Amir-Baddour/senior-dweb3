@@ -54,14 +54,31 @@ function get_pending_login($token) {
 function get_frontend_url() {
     $host = $_SERVER['HTTP_HOST'];
     
+    // Check if there's a referer header from the login page
+    $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
+    
+    if ($referer) {
+        // Extract the base URL from referer
+        $parsed = parse_url($referer);
+        if ($parsed && isset($parsed['scheme']) && isset($parsed['host'])) {
+            $frontendUrl = $parsed['scheme'] . '://' . $parsed['host'];
+            error_log("Frontend URL from referer: " . $frontendUrl);
+            return $frontendUrl;
+        }
+    }
+    
+    // Fallback logic
     if (strpos($host, 'trycloudflare.com') !== false || strpos($host, 'cloudflare.com') !== false) {
+        // Try common frontend URLs for production
         return 'https://yourwallet0.vercel.app';
     }
     
     if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
-        return 'http://localhost:5500';
+        // Local development - try different common ports
+        return 'http://localhost:5500'; // Or change to your port: 3000, 8080, etc.
     }
     
+    // Last resort: use the same origin as the API
     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
     return $protocol . '://' . $host;
 }
