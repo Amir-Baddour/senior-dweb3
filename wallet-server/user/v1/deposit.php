@@ -110,7 +110,7 @@ try {
       <p>You have deposited <strong>{$fmtAmount} USDT</strong> into your wallet.</p>
       <p>Your new balance is <strong>{$fmtBal} USDT</strong>.</p>
       <hr>
-      <p>If you did not make this transaction, please contact support immediately.</p>
+      <p>If you did not make this transaction, please contact support immediately => amirbaddour675@gmail.com.</p>
     ";
     $altBody   = "Deposit {$fmtAmount} USDT. New balance: {$fmtBal} USDT.";
 
