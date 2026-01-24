@@ -8,10 +8,18 @@ if (!headers_sent()) {
   ];
 
   $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-  
+  // ✅ Allow Postman / server-side tools (no Origin)
+  if ($origin === '') {
+    header("Access-Control-Allow-Origin: *");
+  } elseif (in_array($origin, $allowed_origins, true) || $is_cloudflare_tunnel) {
+    header("Access-Control-Allow-Origin: $origin");
+    header("Vary: Origin");
+  } else {
+    error_log("[CORS] Origin not allowed: " . $origin);
+  }
   // ✅ Auto-allow any trycloudflare.com subdomain
   $is_cloudflare_tunnel = preg_match('/^https:\/\/[a-z0-9\-]+\.trycloudflare\.com$/', $origin);
-  
+
   if (in_array($origin, $allowed_origins, true) || $is_cloudflare_tunnel) {
     header("Access-Control-Allow-Origin: $origin");
     header("Vary: Origin");
@@ -24,7 +32,7 @@ if (!headers_sent()) {
   header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
   header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
   header("Content-Type: application/json; charset=UTF-8");
-  
+
   // ✅ Add COOP headers for OAuth and security
   header("Cross-Origin-Opener-Policy: same-origin-allow-popups");
   header("Cross-Origin-Embedder-Policy: unsafe-none");
@@ -35,4 +43,3 @@ if (!headers_sent()) {
     exit;
   }
 }
-?>
