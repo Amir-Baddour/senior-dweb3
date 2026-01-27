@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../connection/db.php';
-$conn = getConnection();
+$conn = $pdo;
 try {
     $sql = "CREATE TABLE IF NOT EXISTS verifications (
         id INT AUTO_INCREMENT PRIMARY KEY,

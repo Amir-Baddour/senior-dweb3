@@ -9,14 +9,10 @@ header('Content-Type: text/plain');
 
 require_once __DIR__ . '/../../connection/db.php';
 
-// Get PDO (supports either global $conn or getConnection())
-if (function_exists('getConnection')) {
-    $conn = getConnection();
-} else {
-    global $conn;
-    if (!$conn instanceof PDO) {
-        die("❌ No PDO connection available.\n");
-    }
+// Get PDO connection
+global $conn;
+if (!$conn instanceof PDO) {
+    die("❌ No PDO connection available.\n");
 }
 
 try {

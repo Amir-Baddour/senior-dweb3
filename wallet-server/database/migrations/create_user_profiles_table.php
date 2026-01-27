@@ -17,8 +17,13 @@ try {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )";
 
+    if ($conn === null) {
+        throw new Exception("Database connection failed.");
+    }
     $conn->exec($sql);
     echo "✅ user_profiles table created successfully.\n";
 } catch (PDOException $e) {
     echo "❌ Error creating user_profiles table: " . $e->getMessage() . "\n";
+} catch (Exception $e) {
+    echo "❌ Error: " . $e->getMessage() . "\n";
 }

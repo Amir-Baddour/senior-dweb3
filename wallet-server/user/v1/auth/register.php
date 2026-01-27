@@ -43,7 +43,7 @@ function generate_jwt(array $payload, string $secret, int $expiry_in_seconds = 3
     return $base64Header . "." . $base64Payload . "." . $base64Signature;
 }
 
-$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; // Replace with secure secret
+$jwt_secret = "CHANGE_THIS_TO_A_RANDOM_SECRET_KEY"; 
 $response = ["status" => "error", "message" => "Something went wrong"];
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -98,10 +98,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $payload = ["id" => $user_id, "email" => $email, "role" => 0];
         $jwt = generate_jwt($payload, $jwt_secret, 3600);
 
-        // ✅ Generate QR Code as base64 string
+        // Generate QR Code as base64 string
         $qrBase64 = MailService::generatePaymentQrBase64($user_id, 10.0);
 
-        // ✅ Optionally save QR code image to server (public folder or logs)
+        // Optionally save QR code image to server (public folder or logs)
         $qrDir = __DIR__ . '/../../../qrcodes/';
         if (!file_exists($qrDir)) {
             mkdir($qrDir, 0777, true);

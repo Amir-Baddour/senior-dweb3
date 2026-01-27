@@ -1,6 +1,20 @@
 <?php
 // create_transaction_limits_table.php
 require_once __DIR__ . '/../../connection/db.php';
+
+if (!function_exists('getConnection')) {
+    // Define getConnection() if not already defined
+    function getConnection() {
+        try {
+            $pdo = new PDO('mysql:host=localhost;dbname=digital_wallet', 'root', '');
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            return $pdo;
+        } catch (PDOException $e) {
+            die("Connection failed: " . $e->getMessage() . "\n");
+        }
+    }
+}
+
 $conn = getConnection();
 try {
     $sql = "CREATE TABLE IF NOT EXISTS transaction_limits (

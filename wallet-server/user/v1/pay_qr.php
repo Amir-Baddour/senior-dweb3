@@ -15,7 +15,7 @@ if ($r<=0 || $e<=0 || !$s) { http_response_code(400); header('Content-Type: text
   <p>Recipient ID: <b><?= htmlspecialchars((string)$r) ?></b></p>
   <p>QR expires: <b><?= date('Y-m-d H:i:s', $e) ?></b></p>
 
-  <label>Amount (USD):</label>
+  <label>Amount (USDT):</label>
   <input id="amount" type="number" step="0.01" min="0.01"
          value="<?= $a ? number_format($a/100, 2, '.', '') : '' ?>" <?= $a?'readonly':'' ?> />
   <br><br>
