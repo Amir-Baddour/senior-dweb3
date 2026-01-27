@@ -2,7 +2,7 @@
 // update_id_document_nullable.php
 
 require_once __DIR__ . '/../../connection/db.php';
-$conn = getConnection();
+$conn = new PDO('mysql:host=localhost;dbname=your_database', 'root', '');
 try {
     // Make 'id_document' column accept NULL with a default of NULL
     $sql = "ALTER TABLE verifications 

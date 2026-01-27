@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../../connection/db.php';
-$conn = getConnection();
+$conn = isset($conn) ? $conn : new PDO('mysql:host=localhost;dbname=your_database', 'root', '');
 
 $sql = "CREATE TABLE IF NOT EXISTS wallets (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../connection/db.php';
-$conn = getConnection();
+$conn = $pdo ?? new PDO('mysql:host=localhost;dbname=digital_wallet', 'root', '');
 try {
     $sql = "ALTER TABLE users 
             DROP COLUMN is_validated, 
