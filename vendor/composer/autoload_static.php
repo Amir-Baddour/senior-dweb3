@@ -23,6 +23,7 @@ class ComposerStaticInit607367f316dc0e94114beee62316416b
         ),
         'P' => 
         array (
+            'Psr\\Log\\' => 8,
             'PhpOption\\' => 10,
             'PHPMailer\\PHPMailer\\' => 20,
         ),
@@ -74,6 +75,10 @@ class ComposerStaticInit607367f316dc0e94114beee62316416b
         'Sabberworm\\CSS\\' => 
         array (
             0 => __DIR__ . '/..' . '/sabberworm/php-css-parser/src',
+        ),
+        'Psr\\Log\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/log/src',
         ),
         'PhpOption\\' => 
         array (

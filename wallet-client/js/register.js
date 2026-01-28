@@ -4,25 +4,37 @@ const passwordInput = document.getElementById('password');
 const confirmPasswordInput = document.getElementById('confirm_password');
 const result = document.getElementById('result');
 
-// ---------- Password Live Check ----------
+// ---------- Live Password Check ----------
 passwordInput.addEventListener('input', () => {
     const password = passwordInput.value;
 
     if (password.length < 8) {
         result.style.color = "orange";
-        result.innerText = "Password must be at least 8 characters";
+        result.innerText = "Min 8 characters";
         return;
     }
 
-    if (!/[A-Za-z]/.test(password)) {
+    if (!/[a-z]/.test(password)) {
         result.style.color = "orange";
-        result.innerText = "Password must contain a letter";
+        result.innerText = "Add lowercase letter";
+        return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+        result.style.color = "red";
+        result.innerText = "Add uppercase letter";
         return;
     }
 
     if (!/[0-9]/.test(password)) {
-        result.style.color = "orange";
-        result.innerText = "Password must contain a number";
+        result.style.color = "red";
+        result.innerText = "Add number";
+        return;
+    }
+
+    if (!/[!@#$%^&]/.test(password)) {
+        result.style.color = "red";
+        result.innerText = "Add symbol (!@#$%^&)";
         return;
     }
 
@@ -39,11 +51,13 @@ form.addEventListener('submit', async function (e) {
     // ---------- Block Weak Password ----------
     if (
         password.length < 8 ||
-        !/[A-Za-z]/.test(password) ||
-        !/[0-9]/.test(password)
+        !/[a-z]/.test(password) ||
+        !/[A-Z]/.test(password) ||
+        !/[0-9]/.test(password) ||
+        !/[!@#$%^&]/.test(password)
     ) {
         result.style.color = "red";
-        result.innerText = "Please enter a strong password";
+        result.innerText = "Password does not meet requirements";
         return;
     }
 
@@ -63,7 +77,6 @@ form.addEventListener('submit', async function (e) {
         });
 
         const data = await response.json();
-
         result.innerText = data.message;
         result.style.color = data.status === "success" ? "green" : "red";
 

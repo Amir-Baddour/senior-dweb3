@@ -19,12 +19,13 @@ $response = [
     "message" => "Something went wrong"
 ];
 
+// ---------- Allow POST Only ----------
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     echo json_encode($response);
     exit;
 }
 
-// ---------- Get Inputs ----------
+// ---------- Get Data ----------
 $email = trim($_POST["email"] ?? '');
 $password = $_POST["password"] ?? '';
 $confirm_password = $_POST["confirm_password"] ?? '';
@@ -43,14 +44,26 @@ if (strlen($password) < 8) {
     exit;
 }
 
-if (!preg_match('/[A-Za-z]/', $password)) {
-    $response["message"] = "Password must contain at least one letter";
+if (!preg_match('/[a-z]/', $password)) {
+    $response["message"] = "Password must contain a lowercase letter";
+    echo json_encode($response);
+    exit;
+}
+
+if (!preg_match('/[A-Z]/', $password)) {
+    $response["message"] = "Password must contain an uppercase letter";
     echo json_encode($response);
     exit;
 }
 
 if (!preg_match('/[0-9]/', $password)) {
-    $response["message"] = "Password must contain at least one number";
+    $response["message"] = "Password must contain a number";
+    echo json_encode($response);
+    exit;
+}
+
+if (!preg_match('/[!@#$%^&]/', $password)) {
+    $response["message"] = "Password must contain a symbol (!@#$%^&)";
     echo json_encode($response);
     exit;
 }
@@ -71,8 +84,7 @@ try {
     $walletsModel = new WalletsModel();
 
     // ---------- Check Email Exists ----------
-    $users = $usersModel->getAllUsers();
-    foreach ($users as $user) {
+    foreach ($usersModel->getAllUsers() as $user) {
         if ($user['email'] === $email) {
             $response["message"] = "Email already registered";
             echo json_encode($response);
