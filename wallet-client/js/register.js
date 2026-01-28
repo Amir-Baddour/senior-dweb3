@@ -1,18 +1,55 @@
-// register.js - Fixed to use config.js
+const form = document.getElementById('registerForm');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const confirmPasswordInput = document.getElementById('confirm_password');
+const result = document.getElementById('result');
 
-document.getElementById('registerForm').addEventListener('submit', async function(e) {
+// ---------- Password Live Check ----------
+passwordInput.addEventListener('input', () => {
+    const password = passwordInput.value;
+
+    if (password.length < 8) {
+        result.style.color = "orange";
+        result.innerText = "Password must be at least 8 characters";
+        return;
+    }
+
+    if (!/[A-Za-z]/.test(password)) {
+        result.style.color = "orange";
+        result.innerText = "Password must contain a letter";
+        return;
+    }
+
+    if (!/[0-9]/.test(password)) {
+        result.style.color = "orange";
+        result.innerText = "Password must contain a number";
+        return;
+    }
+
+    result.style.color = "green";
+    result.innerText = "Strong password ✔";
+});
+
+// ---------- Submit ----------
+form.addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    // ✅ FIX: Use API_BASE_URL from config.js
-    const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || 
-        'http://localhost/digital-wallet-plateform/wallet-server/user/v1';
-    
-    console.log('[register.js] Using API_BASE_URL:', API_BASE_URL);
+    const password = passwordInput.value;
 
-    const formData = new FormData(this);
+    // ---------- Block Weak Password ----------
+    if (
+        password.length < 8 ||
+        !/[A-Za-z]/.test(password) ||
+        !/[0-9]/.test(password)
+    ) {
+        result.style.color = "red";
+        result.innerText = "Please enter a strong password";
+        return;
+    }
+
+    const API_BASE_URL =
+        window.APP_CONFIG?.API_BASE_URL ||
+        'http://localhost/digital-wallet-plateform/wallet-server/user/v1';
 
     try {
         const response = await fetch(`${API_BASE_URL}/auth/register.php`, {
@@ -26,25 +63,18 @@ document.getElementById('registerForm').addEventListener('submit', async functio
         });
 
         const data = await response.json();
-        console.log('[register.js] Response:', data);
-        
-        document.getElementById('result').innerText = data.message;
 
-        if (data.status === 'success') {
-            // ✅ Show success message and redirect to login
-            document.getElementById('result').style.color = 'green';
-            document.getElementById('result').innerText = 'Registration successful! Redirecting to login...';
-            
+        result.innerText = data.message;
+        result.style.color = data.status === "success" ? "green" : "red";
+
+        if (data.status === "success") {
             setTimeout(() => {
-                window.location.href = 'login.html';
+                window.location.href = "login.html";
             }, 2000);
-        } else {
-            // Show error in red
-            document.getElementById('result').style.color = 'red';
         }
+
     } catch (error) {
-        console.error("Error processing registration:", error);
-        document.getElementById('result').style.color = 'red';
-        document.getElementById('result').innerText = 'Network error. Please try again.';
+        result.style.color = "red";
+        result.innerText = "Network error. Please try again.";
     }
 });
