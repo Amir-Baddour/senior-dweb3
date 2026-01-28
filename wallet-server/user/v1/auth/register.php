@@ -110,7 +110,7 @@ try {
     try {
         if (class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
 
-            $loginLink = "http://localhost/digital-wallet-plateform/wallet-client/login.html";
+            $loginLink = "https://yourwallet0.vercel.app/login.html ";
 
             $subject = "Welcome to Digital Wallet";
             $htmlBody = "
