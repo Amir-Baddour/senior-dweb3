@@ -32,6 +32,13 @@ $responses = [
   "privacy" => "We take your privacy seriously. Please review our privacy policy on the website for details on how we handle your data.",
   "terms" => "You can read our terms of service on the website. It outlines your rights and responsibilities as a user.",
   "feedback" => "We appreciate your feedback! Please let us know how we can improve our services by emailing us at amirbaddour675@gmail.com or using the feedback form on our website.",
+  "limits" => "Transaction limits depend on your account tier (Regular or VIP).",
+  "daily limit" => "Daily limits depend on your tier. Ask me about Regular or VIP limits.",
+  "monthly limit" => "Monthly limits reset automatically each month based on your tier.",
+  "upgrade tier" => "To upgrade your tier, please contact support for verification.",
+  "profile" => "Your profile information can be updated from the account settings page.",
+  "forgot password" => "Use the forgot password option on the login page to reset your password.",
+  "change password" => "You can change your password from account settings.",
 ];
 
 // Match and respond

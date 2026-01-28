@@ -1,5 +1,5 @@
 <?php
-require
+require_once __DIR__ . '/../../utils/cors.php';
 
 // ---------- Resolve and verify include paths (from user/v1/) ----------
 $dbPath     = __DIR__ . '/../../connection/db.php';
@@ -7,6 +7,12 @@ $usersPath  = __DIR__ . '/../../models/UsersModel.php';
 $resetsPath = __DIR__ . '/../../models/PasswordResetsModel.php';
 $autoload   = __DIR__ . '/../../../vendor/autoload.php'; // project-root/vendor
 
+$checks = [
+  'db.php'                  => file_exists($dbPath),
+  'UsersModel.php'          => file_exists($usersPath),
+  'PasswordResetsModel.php' => file_exists($resetsPath),
+  'vendor/autoload.php'     => file_exists($autoload),
+];
 
 // Self-test (open in browser: .../request_password_reset.php?selftest=1)
 if (isset($_GET['selftest'])) {
