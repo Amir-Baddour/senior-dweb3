@@ -6,67 +6,32 @@ const result = document.getElementById('result');
 
 // ---------- Live Password Check ----------
 passwordInput.addEventListener('input', () => {
-    const password = passwordInput.value;
+    const p = passwordInput.value;
 
-    if (password.length < 8) {
-        result.style.color = "orange";
-        result.innerText = "Min 8 characters";
-        return;
-    }
+    if (p.length < 8) return show("Min 8 characters", "orange");
+    if (!/[a-z]/.test(p)) return show("Add lowercase letter", "orange");
+    if (!/[A-Z]/.test(p)) return show("Add uppercase letter", "red");
+    if (!/[0-9]/.test(p)) return show("Add number", "red");
+    if (!/[!@#$%^&]/.test(p)) return show("Add symbol (!@#$%^&)", "red");
 
-    if (!/[a-z]/.test(password)) {
-        result.style.color = "orange";
-        result.innerText = "Add lowercase letter";
-        return;
-    }
-
-    if (!/[A-Z]/.test(password)) {
-        result.style.color = "red";
-        result.innerText = "Add uppercase letter";
-        return;
-    }
-
-    if (!/[0-9]/.test(password)) {
-        result.style.color = "red";
-        result.innerText = "Add number";
-        return;
-    }
-
-    if (!/[!@#$%^&]/.test(password)) {
-        result.style.color = "red";
-        result.innerText = "Add symbol (!@#$%^&)";
-        return;
-    }
-
-    result.style.color = "green";
-    result.innerText = "Strong password ✔";
+    show("Strong password ✔", "green");
 });
 
+function show(msg, color) {
+    result.innerText = msg;
+    result.style.color = color;
+}
+
 // ---------- Submit ----------
-form.addEventListener('submit', async function (e) {
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const password = passwordInput.value;
-
-    // ---------- Block Weak Password ----------
-    if (
-        password.length < 8 ||
-        !/[a-z]/.test(password) ||
-        !/[A-Z]/.test(password) ||
-        !/[0-9]/.test(password) ||
-        !/[!@#$%^&]/.test(password)
-    ) {
-        result.style.color = "red";
-        result.innerText = "Password does not meet requirements";
-        return;
-    }
 
     const API_BASE_URL =
         window.APP_CONFIG?.API_BASE_URL ||
         'http://localhost/digital-wallet-plateform/wallet-server/user/v1';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/register.php`, {
+        const res = await fetch(`${API_BASE_URL}/auth/register.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
@@ -76,9 +41,8 @@ form.addEventListener('submit', async function (e) {
             })
         });
 
-        const data = await response.json();
-        result.innerText = data.message;
-        result.style.color = data.status === "success" ? "green" : "red";
+        const data = await res.json();
+        show(data.message, data.status === "success" ? "green" : "red");
 
         if (data.status === "success") {
             setTimeout(() => {
@@ -86,8 +50,7 @@ form.addEventListener('submit', async function (e) {
             }, 2000);
         }
 
-    } catch (error) {
-        result.style.color = "red";
-        result.innerText = "Network error. Please try again.";
+    } catch (err) {
+        show("Network error. Please try again.", "red");
     }
 });

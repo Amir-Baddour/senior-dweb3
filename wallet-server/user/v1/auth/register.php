@@ -12,9 +12,8 @@ require_once __DIR__ . '/../../../connection/db.php';
 require_once __DIR__ . '/../../../models/UsersModel.php';
 require_once __DIR__ . '/../../../models/UserProfilesModel.php';
 require_once __DIR__ . '/../../../models/WalletsModel.php';
-require_once __DIR__ . '/../../../models/VerificationsModel.php';
 
-// PHPMailer (Brevo SMTP)
+// PHPMailer
 $autoload = __DIR__ . '/../../../../vendor/autoload.php';
 if (file_exists($autoload)) {
     require_once $autoload;
@@ -37,8 +36,10 @@ $confirm_password = $_POST["confirm_password"] ?? '';
 
 // ---------- Email Validation ----------
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $response["message"] = "Invalid email format";
-    echo json_encode($response);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Invalid email format"
+    ]);
     exit;
 }
 
@@ -50,37 +51,42 @@ if (
     !preg_match('/[0-9]/', $password) ||
     !preg_match('/[!@#$%^&]/', $password)
 ) {
-    $response["message"] = "Password must contain upper, lower, number and symbol";
-    echo json_encode($response);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Password must contain upper, lower, number and symbol"
+    ]);
     exit;
 }
 
 // ---------- Password Match ----------
 if ($password !== $confirm_password) {
-    $response["message"] = "Passwords do not match";
-    echo json_encode($response);
+    echo json_encode([
+        "status" => "error",
+        "message" => "Passwords do not match"
+    ]);
     exit;
 }
 
 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
 try {
-    $usersModel         = new UsersModel();
-    $profilesModel      = new UserProfilesModel();
-    $walletsModel       = new WalletsModel();
-    $verificationsModel = new VerificationsModel();
+    $usersModel    = new UsersModel();
+    $profilesModel = new UserProfilesModel();
+    $walletsModel  = new WalletsModel();
 
     // ---------- Check Duplicate Email ----------
     foreach ($usersModel->getAllUsers() as $u) {
         if ($u['email'] === $email) {
-            $response["message"] = "Email already registered";
-            echo json_encode($response);
+            echo json_encode([
+                "status" => "error",
+                "message" => "Email already registered"
+            ]);
             exit;
         }
     }
 
     // ---------- Create User ----------
-    $userId = $usersModel->create($email, $hashedPassword, 0);
+    $userId = $usersModel->create($email, $hashedPassword, 1);
 
     // ---------- Create Profile ----------
     $name = explode('@', $email)[0];
@@ -89,41 +95,18 @@ try {
     // ---------- Create Wallet ----------
     $walletsModel->create($userId, 'USDT', 0.00);
 
-    // ---------- Email Verification Record ----------
-    $token = bin2hex(random_bytes(16));
-    $verificationsModel->create($userId, $token, 0, 'Email not verified');
-
-    // ---------- Verification Link ----------
-    $verifyLink =
-        ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http') .
-        '://' . $_SERVER['HTTP_HOST'] .
-        '/digital-wallet-plateform/wallet-server/user/v1/auth/verify_email.php?token=' . $token;
-
-    // ---------- Send Verification Email (NON-FATAL) ----------
+    // ---------- Send Welcome Email ----------
     try {
         if (class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
 
-            $subject = "Verify your email";
-            $htmlBody = "
-                <h2>Welcome to Digital Wallet</h2>
-                <p>Please verify your email to activate your account.</p>
-                <p><a href='{$verifyLink}'>Verify Email</a></p>
-                <p>If you did not register, ignore this email.</p>
-            ";
-
-            $altBody = "Verify your email: {$verifyLink}";
-
-            // Brevo SMTP (same as deposit.php)
-            $brevoLogin    = '9f9f14001@smtp-brevo.com';
-            $brevoPassword = 'RkWndDBs7phYKfG2';
+            $loginLink = "https://yourwallet0.vercel.app/login.html";
 
             $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-            $mail->SMTPDebug = 0;
             $mail->isSMTP();
             $mail->Host       = 'smtp-relay.brevo.com';
             $mail->SMTPAuth   = true;
-            $mail->Username   = $brevoLogin;
-            $mail->Password   = $brevoPassword;
+            $mail->Username   = '9f9f14001@smtp-brevo.com';
+            $mail->Password   = 'RkWndDBs7phYKfG2';
             $mail->Port       = 587;
             $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
             $mail->CharSet    = 'UTF-8';
@@ -131,24 +114,38 @@ try {
             $mail->setFrom('amirbaddour675@gmail.com', 'Digital Wallet');
             $mail->addAddress($email);
             $mail->isHTML(true);
-            $mail->Subject = $subject;
-            $mail->Body    = $htmlBody;
-            $mail->AltBody = $altBody;
+            $mail->Subject = "Welcome to Digital Wallet 🎉";
 
+            $mail->Body = "
+                <h2>Welcome to Digital Wallet</h2>
+                <p>Your account has been created successfully.</p>
+                <p>
+                    <a href='{$loginLink}'
+                       style='display:inline-block;
+                              padding:12px 20px;
+                              background:#2563eb;
+                              color:#ffffff;
+                              text-decoration:none;
+                              border-radius:6px;'>
+                        Login to your account
+                    </a>
+                </p>
+                <p>If you did not register, please ignore this email.</p>
+            ";
+
+            $mail->AltBody = "Login here: {$loginLink}";
             $mail->send();
         }
     } catch (Throwable $e) {
-        error_log('register verification email error: ' . $e->getMessage());
+        error_log("Register email error: " . $e->getMessage());
     }
 
-    // ---------- Success ----------
-    $response = [
-        "status"  => "success",
-        "message" => "Registration successful. Please verify your email before login."
-    ];
+    echo json_encode([
+        "status" => "success",
+        "message" => "Registration successful! Check your email and login."
+    ]);
 
 } catch (Throwable $e) {
-    $response["message"] = "Server error";
+    error_log("Register error: " . $e->getMessage());
+    echo json_encode($response);
 }
-
-echo json_encode($response);
