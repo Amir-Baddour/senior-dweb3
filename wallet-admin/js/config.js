@@ -17,7 +17,7 @@
     API_BASE_URL = `http://localhost${basePath}`;
   } else if (isVercel) {
     // ✅ UPDATED: New tunnel URL
-    API_BASE_URL = ` https://queensland-edition-speakers-gathering.trycloudflare.com${basePath}`;
+    API_BASE_URL = `https://lending-racing-conducted-kai.trycloudflare.com${basePath}`;
   } else if (isCloudflare) {
     // ✅ When on Cloudflare tunnel, use same origin
     API_BASE_URL = `${location.origin}${basePath}`;
