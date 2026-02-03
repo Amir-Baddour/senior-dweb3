@@ -28,7 +28,7 @@ if (!headers_sent()) {
     error_log("[CORS] Origin not allowed: " . $origin);
   }
 
-  header("Access-Control-Allow-Credentials: true");
+  header("Access-Control-Allow-Credentials: true");#cookies or JWT
   header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
   header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
   header("Content-Type: application/json; charset=UTF-8");
